@@ -669,7 +669,7 @@ EcoInd <- function(dir, calctype){
 
   #if (length(which(ecoind_mc$TL.catch < 0)) != 0 ) {
   #  ecoind_mc <- ecoind_mc[-which(ecoind_mc$Trial %in% unique(ecoind_mc$Trial[which(ecoind_mc$TL.catch < 0)])),] # delete false results
-  }
+  #}
 
   ecoind_mc <- ecoind_mc[which(ecoind_mc$Trial %in% as.numeric(param_mc_combined$trial)),]
 
