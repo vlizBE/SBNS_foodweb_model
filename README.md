@@ -1,5 +1,5 @@
 # Southern Bight of the North Sea Food Web Model
-This Github repository provides an Ecopath with Ecosim food web model, accompanied by R scripts to process and analyse the data.
+An Ecopath with Ecosim food web model, accompanied by R scripts to process and analyse the data.
 
 ## Table of Contents
 - [Overview](#overview)
