@@ -1,0 +1,291 @@
+---
+title: "Fishing effort time series 1991-2023"
+author: "Dries Lorré"
+date: "2024-03-04"
+output: html_document
+---
+
+## Load and install required packages
+```{r setup, include=FALSE}
+library("ggplot2")
+library("readr")
+library("dplyr")
+library("tidyr")
+library("summarytools")
+
+```
+
+## Load effort data (STEFD 2003-2016)
+```{r}
+Effort2003 <- read.csv("map effort by rectangle_Full Data_data.csv")
+Effort2004 <- read.csv("map effort by rectangle_Full Data_data (1).csv") 
+Effort2005 <- read.csv("map effort by rectangle_Full Data_data (2).csv") 
+Effort2006 <- read.csv("map effort by rectangle_Full Data_data (4).csv") 
+Effort2007 <- read.csv("map effort by rectangle_Full Data_data (5).csv") 
+Effort2008 <- read.csv("map effort by rectangle_Full Data_data (6).csv") 
+Effort2009 <- read.csv("map effort by rectangle_Full Data_data (7).csv") 
+Effort2010 <- read.csv("map effort by rectangle_Full Data_data (8).csv") 
+Effort2011 <- read.csv("map effort by rectangle_Full Data_data (9).csv") 
+Effort2012 <- read.csv("map effort by rectangle_Full Data_data (10).csv") 
+Effort2013 <- read.csv("map effort by rectangle_Full Data_data (11).csv") 
+Effort2014 <- read.csv("map effort by rectangle_Full Data_data (12).csv") 
+Effort2015 <- read.csv("map effort by rectangle_Full Data_data (13).csv")
+Effort2016 <- read.csv("map effort by rectangle_Full Data_data (14).csv") 
+
+```
+
+
+## select data for study area: ICES Area IVc
+selection of ICES rectangles that overlap with ICES area IVc
+
+```{r}
+Effort0316 <- bind_rows(Effort2003,Effort2004,Effort2005,Effort2006,Effort2007,Effort2008,Effort2009,Effort2010,Effort2011,Effort2012,Effort2013,Effort2014,Effort2015,Effort2016)
+
+IVc <- c("35F0","35F1","35F2","35F3","35F4","35F5","35F6","35F7","34F0","34F1","34F2","34F3","34F4","34F5","33F1","33F2","33F3","33F4","32F0","32F1","32F2","32F3","32F4","31F0","31F1","31F2","31F3","31F4")
+
+Effort0316_IVc <- subset(Effort0316, Effort0316$ICES.rectangle %in% IVc)
+```
+
+
+## defining Ecopath fishing fleets in dataset
+```{r}
+Effort0316_IVc_EwE <- Effort0316_IVc %>%
+  mutate(EwE_Fleet = case_when(
+    regulated.gear == "BT1" ~ "beam",
+    regulated.gear == "BT2" ~ "beam",
+    regulated.gear == "BEAM" & mesh_size_range == "32-54" ~ "beam",
+    regulated.gear == "BEAM" & mesh_size_range == "55-69" ~ "beam",
+    regulated.gear == "BEAM" & mesh_size_range == "70-79" ~ "beam",
+    regulated.gear == "TR1" ~ "demersal",
+    regulated.gear == "TR2" ~ "demersal",
+    regulated.gear == "TR3" ~ "demersal",
+    regulated.gear == "DEM_SEINE" ~ "demersal",
+    regulated.gear == "OTTER" & mesh_size_range == "32-54" ~ "demersal",
+    regulated.gear == "OTTER" & mesh_size_range == "55-69" ~ "demersal",
+    regulated.gear == "OTTER" & mesh_size_range == "NONE" ~ "demersal",
+    regulated.gear == "DREDGE" ~ "dredge",
+    regulated.gear == "LL1" ~ "hooks",
+    regulated.gear == "GN1" ~ "nets",
+    regulated.gear == "GT1" ~ "nets",
+    regulated.gear == "NONE" ~ "other",
+    regulated.gear == "PEL_SEINE" ~ "pelagic",
+    regulated.gear == "PEL_TRAWL" ~ "pelagic",
+    regulated.gear == "POTS" ~ "pots",
+    regulated.gear == "BEAM" & mesh_size_range == "16-31" ~ "shrimp",
+    regulated.gear == "BEAM" & mesh_size_range == "<16" ~ "shrimp"
+  ))
+```
+
+## calculation of effective fishing effort per fleet per year (2003-2016)
+```{r}
+summary_table <- Effort0316_IVc_EwE %>%
+  group_by(year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Effective.Effort)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+```
+Opnieuw doen met nieuwe download! (By country!)
+# Data 2013-2023
+```{r}
+Effort1323 <- read.csv("Effort/FDI Effort EU.csv")
+IV4c <- ("27.4.C")
+Effort1323_IVc <- subset(Effort1323, Effort1323$Sub.region %in% IV4c)
+
+```
+
+
+```{r}
+summary_table_2 <- Effort1323_IVc %>%
+  group_by(Gear.Type, Mesh.size.range) %>%
+  summarise(Count = n()) %>%
+  pivot_wider(names_from = Gear.Type, values_from = Count, values_fill = 0)
+```
+
+## defining Ecopath fishing fleets in dataset
+```{r}
+Effort1323_IVc_EwE <- Effort1323_IVc %>%
+  mutate(EwE_Fleet = case_when(
+    Gear.Type == "TBB" & Mesh.size.range == "80D100"  ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "NK"      ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "120DXX"  ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "100D110" ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "50D100"  ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "70D100"  ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "32D70"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "32D80"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "40D55"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "60D65"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "100DXX"  ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "110D120" ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "65D100"  ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "70D80"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "55D60"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "50D65"   ~ "beam",
+    Gear.Type == "TBB" & Mesh.size.range == "65D70"   ~ "beam",
+    
+    Gear.Type == "OTB" #& !(Mesh.size.range %in% c("NK", "40D50", "32D70", 
+                                                  # "16D32", "32D80", "50D100",
+                                                  # "00D16", "20D40", "40D55", 
+                                                  # "40SXX", "32D90", "65D70",
+                                                  # "16D20","60D65", "50D90",
+                                                  # "50D65", "40D45", "65D100",
+                                                  # "14D16", "00D14", "14D20", 
+                                                  # "50D71")) 
+                       ~ "demersal",
+    
+    Gear.Type == "OTT" ~ "demersal",
+    Gear.Type == "PTB" ~ "demersal",
+    Gear.Type == "SSC" ~ "demersal",
+    Gear.Type == "SDN" ~ "demersal",
+    Gear.Type == "SPR" ~ "demersal",
+    # Gear.Type == "SB"  ~ "demersal",
+    # Gear.Type == "SV"  ~ "demersal",
+
+    Gear.Type == "DRB" ~ "dredge",
+    
+    Gear.Type == "LLD" ~ "hooks",
+    Gear.Type == "LLS" ~ "hooks",
+    
+    Gear.Type == "GTR" ~ "nets",
+    Gear.Type == "GNS" ~ "nets",
+    Gear.Type == "GND" ~ "hooks",
+    
+    Gear.Type == "NK" ~ "other",
+    
+    Gear.Type == "PS" ~ "pelagic",
+    # Gear.Type == "LA" ~ "pelagic",
+    Gear.Type == "OTM" ~ "pelagic",
+    Gear.Type == "PTM" ~ "pelagic",
+    
+    Gear.Type == "FPO" ~ "pots",
+    
+    Gear.Type == "TBB" & Mesh.size.range == "16D32" ~ "shrimp", #TBB CRU --> shrimpers!
+    # Gear.Type == "TBB" & Mesh.size.range == "00D14" ~ "shrimp", # TTB DEF
+    Gear.Type == "TBB" & Mesh.size.range == "00D16" ~ "shrimp" #,
+    # Gear.Type == "TBB" & Mesh.size.range == "14D20" ~ "shrimp"
+  ))
+```
+
+
+```{r}
+# Total.days.at.sea
+summary_table_1323_1 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Total.days.at.sea)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# Total.Fishing.Days
+summary_table_1323_2 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Total.Fishing.Days)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# Total.kW.days.at.Sea
+summary_table_1323_3 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Total.kW.days.at.Sea, na.rm = T)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# Total.GT.days.at.sea
+summary_table_1323_4 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Total.GT.days.at.sea)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# Total.kW.fishing.days
+summary_table_1323_5 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Total.kW.fishing.days, na.rm = T)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# Total.GT.fishing.days
+summary_table_1323_6 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Total.GT.fishing.days)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# Hours.at.sea
+summary_table_1323_7 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(Hours.at.Sea)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# kW.hours.at.sea
+summary_table_1323_8 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(kW.hours.at.sea)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+
+# GT.hours.at.sea
+summary_table_1323_9 <- Effort1323_IVc_EwE %>%
+  group_by(Year, EwE_Fleet) %>%
+  summarise(Total_Effort = sum(GT.hours.at.sea)) %>%
+  pivot_wider(names_from = EwE_Fleet, values_from = Total_Effort, values_fill = 0)
+```
+
+```{r}
+library(patchwork)
+Effort9923 <- read.csv("Effort_1991-2022_updated.csv")
+
+p1 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = beam)) +
+  xlab(" ") + ylab(" ") + labs(title = "Beam") +
+  theme_bw() + theme(text = element_text(size = 14)) 
+
+p2 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = demersal)) +
+  theme_bw() + xlab(" ") + ylab(" ") + labs(title = "Demersal")  + 
+  theme(text = element_text(size = 14)) 
+
+p3 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = dredge)) +
+  theme_bw() + xlab(" ") + ylab (" ") + labs(title = "Dredge") + 
+  theme(text = element_text(size = 14)) 
+
+p4 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = hooks)) +
+  theme_bw() + xlab(" ") + ylab (" ") + labs(title = "Hooks") + 
+  theme(text = element_text(size = 14)) 
+
+p5 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = nets)) +
+  theme_bw() + xlab(" ") + ylab (" ") + labs(title = "Nets") + 
+  theme(text = element_text(size = 14)) 
+
+p6 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = pelagic)) +
+  theme_bw() + xlab(" ") + ylab (" ") + labs(title = "Pelagic") + 
+  theme(text = element_text(size = 14)) 
+
+p7 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = pots)) +
+  theme_bw() + xlab(" ") + ylab (" ") + labs(title = "Pots") + 
+  theme(text = element_text(size = 14)) 
+
+p8 <- ggplot(Effort9923, aes(x = year)) +
+  geom_line(aes(y = shrimp)) +
+  theme_bw() + xlab(" ") + ylab (" ") + labs(title = "Shrimp") + 
+  theme(text = element_text(size = 14)) 
+
+
+p_tot <- (p1+p2+p3+p4)/(p5+p6+p7+p8)
+p_tot
+
+melted_data_Effort <- tidyr::pivot_longer(Effort9923, cols = -year, names_to = "Gear", values_to = "Effort")
+
+
+p_effort <- ggplot(melted_data_Effort, aes(x = year, y = Effort)) +
+  geom_line() + geom_point() +
+  facet_wrap(~Gear, nrow = 4, scales = "free_y") +
+  labs(x = "Year", y = "Relative Effort") +
+  theme_bw() + theme(text = element_text(size = 14)) +
+  theme(strip.text.x = element_text(size = 10))
+
+p_effort
+
+
+
+
+ggsave("EffortimeSeries.png", p_effort, width = 9, height = 8, dpi = 500)
+
+```
+

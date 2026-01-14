@@ -1,0 +1,246 @@
+---
+title: "Catch Time series for EwE (SBNS model)"
+author: "Dries Lorré"
+date: "2024-07-18"
+output: html_document
+---
+
+Get packages
+```{r setup, include=FALSE}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readxl)
+```
+
+Reading all data
+```{r}
+# ICES catch datasets
+C621 <- read_xlsx("2006-2021_Catches.xlsx")
+C5010 <- read_xlsx("ICES_HIST_CATCH_1950-2010.xlsx")
+IVc_fisheries_catch <- read_xlsx("ICES_HIST_CATCH_1950-2010.xlsx")
+
+# Species list
+Species621 <- read_xlsx("SpeciesList_2006-2021.xlsx")
+EwE_FG <- read.csv("totalcatchspecies.csv")
+```
+
+```{r}
+area_IVc_km2 <- 63633.85614 #km2
+
+IVc_fisheries_catch <- IVc_fisheries_catch[,-3]
+IVc_fisheries_catch <- IVc_fisheries_catch %>%
+  mutate_at(vars(3:ncol(IVc_fisheries_catch)), ~replace(.,. == "." | . == "-", 0)) %>%
+  mutate_at(vars(3:ncol(IVc_fisheries_catch)), ~replace(.,. == "<0.5", 0.5)) %>%
+  mutate_at(vars(3:ncol(IVc_fisheries_catch)), as.numeric)
+  
+
+#assign species from IVc_fisheries_catch not occuring in total landings species list to one that does
+IVc_fisheries_catch$Species[which(IVc_fisheries_catch$Species=="Cuttlefish,bobtail squids nei")] <- "Cuttlefish, bobtail squids nei"
+IVc_fisheries_catch$Species[which(IVc_fisheries_catch$Species=="Crangon shrimps nei")] <- "Common shrimp"
+IVc_fisheries_catch$Species[which(IVc_fisheries_catch$Species=="Red mullet")] <- "Surmullets(=Red mullets) nei"
+IVc_fisheries_catch$Species[which(IVc_fisheries_catch$Species=="Aesop shrimp")] <- "Pandalus shrimps nei"
+IVc_fisheries_catch$Species[which(IVc_fisheries_catch$Species=="Clupeoids nei")] <- "Herrings, sardines nei"
+IVc_fisheries_catch$Species[which(IVc_fisheries_catch$Species=="Scallops nei")] <- "Queen scallop"
+
+#write.csv(rownames(total_catch),"data/totalcatchspecies.csv")  # list with all the caught species names according to the IVc_fisheries_catch df
+
+# assign species to EwE FGs
+EwE_FG$Species <- as.character(EwE_FG$Species)
+EwE_FG$EwE_FG <- as.character(EwE_FG$EwE_FG)
+
+
+# check if all species are in FGs or excluded
+check <- NULL
+IVc_fisheries_catch$EwE_FG <- NA
+for (i in c(1:length(IVc_fisheries_catch$Species))){
+  match <- which(IVc_fisheries_catch$Species[i]==EwE_FG$Species)
+  if (length(match)==0){
+    check <- rbind(check,i)
+    next
+  }
+  IVc_fisheries_catch$EwE_FG[i] <- as.character(EwE_FG$EwE_FG[match])
+}
+
+#######################################################################
+# All these species are not in FG or excluded -> change manual OR add to excel list OR exclude all (now as FG NA)
+IVc_fisheries_catch$Species[check]
+
+IVc_fisheries_catch$EwE_FG[which(IVc_fisheries_catch$Species=="Norway pout")] <- "Other gadoids"
+IVc_fisheries_catch$EwE_FG[which(IVc_fisheries_catch$EwE_FG=="rays")] <- "Rays"
+IVc_fisheries_catch$EwE_FG[94] <- "ND"  # Greenland halibut
+IVc_fisheries_catch$EwE_FG[which(IVc_fisheries_catch$Species=="Sturgeons nei")] <- "ND"
+
+# deze lijn zet ze voorlopig in FG ND dus worden eruit gefilterd
+IVc_fisheries_catch$EwE_FG[which(is.na(IVc_fisheries_catch$EwE_FG))] <- "ND"
+
+#######################################################################
+# FISHERIES LANDINGS 1991 using landings from 2003 -----------------------------------------
+#species total landings
+subset_year <- IVc_fisheries_catch
+
+total_landings <- array(NA,dim= c(length(unique(subset_year$EwE_FG)),61))
+row.names(total_landings) <- c(unique(subset_year$EwE_FG))
+colnames(total_landings) <- c(1950:2010)
+
+for(sp in unique(subset_year$EwE_FG)){
+  subset_species <- subset(subset_year,subset_year$EwE_FG==sp)
+  total_landings[sp,] <- colSums(subset_species[,c(3:63)])
+}
+total_landings <- as.data.frame(total_landings)
+```
+Do not forget to correct for netherlands catches in some of the time series (manual)?
+see excel!
+
+
+Time series for 2006 till 2021.
+First join the species list to the species codes and subseqently the EwE functional groups.
+```{r}
+C621[,5:ncol(C621)] <- lapply(C621[,5:ncol(C621)], as.numeric)
+
+# C621 <- C621 %>%
+#   rename(FAO_code = Species)
+
+#combine the species names to the species codes
+C621_species <- left_join(C621, Species621, by = c("Species" = "FAO_code"))
+
+#now select the same species as in the historical data.
+unique(C621_species$English)
+
+C621_speciesEwE <- left_join(C621_species, EwE_FG, by = c("English" = "Species"))
+```
+
+List all the species that have not yet been assigned to an EwE functional group.
+```{r}
+# Historical dataset (1950-2010)
+Species_5010 <- read.csv("soorten_1950-2010.csv", stringsAsFactors = FALSE)
+
+# Recent dataset (2006-2021)
+na_ewE_FG <- C621_speciesEwE[is.na(C621_speciesEwE$EwE_FG), ]
+Species_0621 <- as.data.frame(unique(na_ewE_FG$English))
+Species_0621 <- Species_0621 %>%
+  rename(Species = `unique(na_ewE_FG$English)`)
+# write.csv(Species_0621, "Species0621_NO_EwE_FG.csv")
+
+Species_full <- full_join(Species_0621, Species_5010, by = "Species")
+write.csv(Species_full, "Species_full.csv", row.names = FALSE)
+```
+
+
+```{r}
+Species_EwE_FG <- read.csv("Species_EwE_FG.csv")
+C621 <- read_xlsx("2006-2021_Catches.xlsx")
+C5010 <- read_xlsx("ICES_HIST_CATCH_1950-2010.xlsx")
+
+C5010 <- C5010[,-3]
+C5010 <- C5010 %>%
+  mutate_at(vars(3:ncol(C5010)), ~replace(.,. == "." | . == "-", 0)) %>%
+  mutate_at(vars(3:ncol(C5010)), ~replace(.,. == "<0.5", 0.5)) %>%
+  mutate_at(vars(3:ncol(C5010)), as.numeric)
+
+C621[,5:ncol(C621)] <- lapply(C621[,5:ncol(C621)], as.numeric)
+
+# Assign EwE functional groups to catch datasets
+#combine the species names to the species codes
+C621_species <- left_join(C621, Species621, by = c("Species" = "FAO_code"))
+C621_speciesEwE <- left_join(C621_species, Species_EwE_FG, by = c("English" = "Species"))
+C5010_SpeciesEwE <- left_join(C5010, Species_EwE_FG, by = "Species")
+
+#check what species are not assigned an EwE FG:
+missing_species <- setdiff(C621_speciesEwE$English, Species_EwE_FG$Species) #No missing species
+missing_species <- setdiff(C5010_SpeciesEwE$Species, Species_EwE_FG$Species) #No missing species
+
+# Get the total landings
+
+landings_5010 <- C5010_SpeciesEwE %>%
+  group_by(EwE_FG) %>%
+  summarise(across(where(is.numeric), sum, na.rm = TRUE))
+landings_5010 <- as.data.frame(t(landings_5010))
+
+Landings_621 <- C621_speciesEwE %>%
+  group_by(EwE_FG) %>%
+  summarise(across(where(is.numeric), sum, na.rm = TRUE))
+Landings_621 <- as.data.frame(t(Landings_621))
+
+
+write.csv(landings_5010, "Landings_1950-2010.csv", row.names = FALSE)
+write.csv(Landings_621, "landings_2006-2021.csv", row.names = FALSE)
+
+
+```
+
+add the corrections for other flatfish: correct for netherlands catch!
+
+```{r}
+C5010_SpeciesEwE_OF <- C5010_SpeciesEwE %>%
+  filter(EwE_FG == "Other flatfish") %>%
+  select(-c('1950':'1990'))
+
+C5010_SpeciesEwE_OG <- C5010_SpeciesEwE %>%
+  filter(EwE_FG == "Other gadoids") %>%
+  select(-c('1950':'1990'))
+
+C5010_SpeciesEwE_PF <- C5010_SpeciesEwE %>%
+  filter(EwE_FG == "Pelagic fish") %>%
+  select(-c('1950':'1990'))
+
+C5010_SpeciesEwE_DF <- C5010_SpeciesEwE %>%
+  filter(EwE_FG == "Demersal fish") %>%
+  select(-c('1950':'1990'))
+
+C5010_SpeciesEwE_SC <- C5010_SpeciesEwE %>%
+  filter(EwE_FG == "Squid & cuttlefish")
+
+write.csv(C5010_SpeciesEwE_SC, "Landings_Squidcuttlefish_91-10.csv", row.names = FALSE)
+
+C621_speciesEwE_SC <- C621_speciesEwE %>%
+  filter(EwE_FG == "Squid & cuttlefish")
+
+write.csv(C621_speciesEwE_SC, "Landings_Squidcuttlefish_06-21.csv", row.names = FALSE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

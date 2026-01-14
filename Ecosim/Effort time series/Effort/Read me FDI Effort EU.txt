@@ -1,0 +1,12 @@
+Fisheries Dependent Information (FDI) data
+
+The FDI Effort EU.csv (Table G in the data call) contains effort data provided by EU Member States (for years 2013-2021) in the context of the 2023 DCF Fisheries Dependent Information (FDI) data call.
+Effort data are aggregated at EU level.
+
+Please note that:
+- The regions 71, 77, 81, 87 and 88 are grouped and named Pacific Ocean;
+- The regions 51 and 57 are grouped and named Indian Ocean.
+
+Detailed information about the data requested in the context of the FDI data call is available on the DCF website https://datacollection.jrc.ec.europa.eu/data-calls
+
+Information about the quality of the data can be found in the report from the STECF EWG 23-10 available at https://stecf.jrc.ec.europa.eu/reports/fdi
