@@ -1,0 +1,57 @@
+{
+    "creators": [
+        {
+            "name": "Pint, Steven",
+            "orcid": "0000-0001-5530-6785",
+            "affiliation": "Flanders Marine Institute, Ostend, Belgium;  Ghent University, Marine Biology Research Group, Ghent, Belgium"
+        },
+ {
+            "name": "Lorré, Dries",
+            "affiliation": "Ghent University, Blue Growth Research Lab, Ghent, Belgium"
+        }
+    ],
+
+    "contributors": [
+        {
+            "name": "Stevens, Martha",
+            "affiliation": "Flanders Marine Institute, Ostend, Belgium; Ghent University, Marine Biology Research Group, Ghent, Belgium"
+        },
+        {
+            "name": "De Troch, Marleen",
+            "affiliation": "Ghent University, Marine Biology Research Group, Ghent, Belgium"
+        },
+        {
+            "name": "Heymans, Sheila",
+            "affiliation": "European Marine Board, Ostend, Belgium"
+        },
+        {
+            "name": "van Oevelen, Dick",
+            "affiliation": "Royal Netherlands Institute for Sea Research, Yerseke, Netherlands"
+        },
+        {
+            "name": "Everaert, Gert",
+            "affiliation": "Flanders Marine Institute, Ostend, Belgium"
+        },
+    ],
+    "title": "Southern Bight of the North Sea Food Web Model: Data, code, model",
+    "version": "1.0.0",
+    "access_right": "open",
+    "related_identifiers": [
+        {
+            #"identifier": "TO ADJUST",
+            "relation": "isSupplementTo",
+            "resource_type": "technical-report"
+        }
+    ],
+    "keywords": [
+        "ecological modelling",
+        "food web",
+        "marine ecology"
+    ],
+    "license": "CC BY 4.0",
+    "upload_type": "R code; data; EwE model",
+    "language": "eng",
+    "grants": [
+        {"id": "101112823"}
+    ]
+}
