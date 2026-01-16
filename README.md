@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/1072059380.svg)](https://doi.org/10.5281/zenodo.18266150)
+
 # Southern Bight of the North Sea Food Web Model
 This Github repository provides an Ecopath with Ecosim food web model, accompanied by R scripts to process and analyse the data.
 
