@@ -1,4 +1,5 @@
 {
+    "metadata": {
     "creators": [
         {
             "name": "Pint, Steven",
@@ -11,7 +12,6 @@
             "affiliation": "Ghent University, Blue Growth Research Lab, Ghent, Belgium"
         }
     ],
-
     "contributors": [
         {
             "name": "Stevens, Martha",
@@ -48,4 +48,5 @@
     "grants": [
         {"id": "101112823"}
     ]
+    }
 }
