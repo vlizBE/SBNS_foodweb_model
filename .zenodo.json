@@ -37,13 +37,6 @@
     "title": "Southern Bight of the North Sea Food Web Model: Data, code, model",
     "version": "1.0.0",
     "access_right": "open",
-    "related_identifiers": [
-        {
-            #"identifier": "TO ADJUST",
-            "relation": "isSupplementTo",
-            "resource_type": "technical-report"
-        }
-    ],
     "keywords": [
         "ecological modelling",
         "food web",
