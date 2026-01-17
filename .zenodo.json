@@ -34,7 +34,6 @@
         }
     ],
     "title": "Southern Bight of the North Sea Food Web Model: Data, code, model",
-    "version": "1.0.2",
     "access_right": "open",
     "keywords": [
         "ecological modelling",
@@ -42,7 +41,7 @@
         "marine ecology"
     ],
     "license": "CC-BY-4.0",
-    "upload_type": "R code; data; EwE model",
+    "upload_type": "software",
     "language": "eng",
     "grants": [
         {"id": "101112823"}
