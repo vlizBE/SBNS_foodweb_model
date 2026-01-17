@@ -3,34 +3,41 @@
         {
             "name": "Pint, Steven",
             "orcid": "0000-0001-5530-6785",
-            "affiliation": "Flanders Marine Institute, Ostend, Belgium;  Ghent University, Marine Biology Research Group, Ghent, Belgium"
+            "affiliation": "Flanders Marine Institute, Ostend, Belgium;  Ghent University, Marine Biology Research Group, Ghent, Belgium",
+            "type": "Researcher"
         },
          {
             "name": "Lorré, Dries",
             "orcid": "0000-0002-5077-5598",
-            "affiliation": "Ghent University, Blue Growth Research Lab, Ghent, Belgium"
+            "affiliation": "Ghent University, Blue Growth Research Lab, Ghent, Belgium",
+             "type": "Researcher"
         }
     ],
     "contributors": [
         {
             "name": "Stevens, Martha",
-            "affiliation": "Flanders Marine Institute, Ostend, Belgium; Ghent University, Marine Biology Research Group, Ghent, Belgium"
+            "affiliation": "Flanders Marine Institute, Ostend, Belgium; Ghent University, Marine Biology Research Group, Ghent, Belgium",
+            "type": "Researcher"
         },
         {
             "name": "De Troch, Marleen",
-            "affiliation": "Ghent University, Marine Biology Research Group, Ghent, Belgium"
+            "affiliation": "Ghent University, Marine Biology Research Group, Ghent, Belgium",
+            "type": "Researcher"
         },
         {
             "name": "Heymans, Sheila",
-            "affiliation": "European Marine Board, Ostend, Belgium"
+            "affiliation": "European Marine Board, Ostend, Belgium",
+            "type": "Researcher"
         },
         {
             "name": "van Oevelen, Dick",
-            "affiliation": "Royal Netherlands Institute for Sea Research, Yerseke, Netherlands"
+            "affiliation": "Royal Netherlands Institute for Sea Research, Yerseke, Netherlands",
+            "type": "Researcher"
         },
         {
             "name": "Everaert, Gert",
-            "affiliation": "Flanders Marine Institute, Ostend, Belgium"
+            "affiliation": "Flanders Marine Institute, Ostend, Belgium",
+            "type": "Researcher"
         }
     ],
     "title": "Southern Bight of the North Sea Food Web Model: Data, code, model",
