@@ -1,5 +1,4 @@
 {
-    "metadata": {
     "creators": [
         {
             "name": "Pint, Steven",
@@ -35,7 +34,7 @@
         }
     ],
     "title": "Southern Bight of the North Sea Food Web Model: Data, code, model",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "access_right": "open",
     "keywords": [
         "ecological modelling",
@@ -48,5 +47,4 @@
     "grants": [
         {"id": "101112823"}
     ]
-    }
 }
