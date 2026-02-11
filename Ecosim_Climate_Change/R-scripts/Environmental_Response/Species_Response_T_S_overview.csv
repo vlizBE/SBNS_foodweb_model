@@ -1,0 +1,33 @@
+﻿,Functional group,Source,Tmin,TPMin,TOpt,TPMax,TMax,SMin,SPMin,SOpt,SPMax,SMax
+Harbour porpoise,Harbour porpoise,Aquamaps,-1.61,5.44,10.18,14.92,27.68,3.58,24.2,29.715,35.23,40.42
+Seals,Seals,Aquamaps,0.64,6.13,9.62,13.11,27.77,3.47,15.96,25.51,35.06,38.14
+Sharks,Sharks,Aquamaps,1.19,9.81,15.155,20.5,28.32,4.67,32.45,34.4,36.35,39.25
+Rays,Rays,Aquamaps,3.9,8.25,13.05,17.85,24.64,14.15,32.74,34.655,36.57,38.79
+Cod (adult),Cod,"Aquamaps expert (Reyes, 2022)",-0.3,4.15,8.15,12.15,16.1,5.5,7,20.9,34.8,39.76
+Whiting (adult),Whiting,"Aquamaps expert (Reyes, 2022)",5.99,8,13.5,19,20.07,7,17,27,37,38.42
+Other gadoids,Other gadoids,Aquamaps,4.98,9.38,12.26,15.14,21.7,8.42,30.46,33.03,35.6,37.6
+Demersal fish,Demersal fish,Aquamaps,1.59,7.97,12.065,16.16,20.24,8.87,25.17,30.565,35.96,38.22
+Herring,Herring,Musimwa et al. (2025),1,8,10,12,19,2,30,32.5,35,36
+Sprat,Sprat,"Aquamaps expert (Reyes, 2021)",5.25,7,12.5,18,23.06,2.8,5.5,21.25,37,39.5
+Mackerel,Mackerel,Musimwa et al. (2025),5,7,7.5,8,20,20,30,32.5,35,36
+Horse mackerel,Horse mackerel,"Aquamaps expert (Reyes, 2023)",1.91,10.19,14.94,19.69,27.64,5.21,32.5,34.705,36.91,39.25
+Sandeels,Sandeels,Aquamaps,2.11,9.59,11.02,12.45,16.5,4.39,19.07,27.115,35.16,37.81
+Plaice,Plaice,"Aquamaps expert (Reyes, 2021)",0.6,9.1,10.935,12.77,20.8,5.7,7.4,21.335,35.27,38.23
+Dab,Dab,"Aquamaps expert (Reyes, 2021)",4.1,9.42,10.965,12.51,15.81,5.3,7.5,21.375,35.25,37.6
+Other flatfish,Other flatfish,Aquamaps,6.17,9.66,12.475,15.29,21.24,3.99,16.73,26.225,35.72,38.68
+Sole,Sole,"Aquamaps expert (Reyes, 2021)",4.54,9.8,14.615,19.43,24.36,7.05,11,24.125,37.25,40
+Sea Bass,Sea Bass,Musimwa et al. (2025),8,9,13.35,17.7,24,0.5,0.5,20.25,40,40
+Pelagic fish,Pelagic fish,Aquamaps,3.06,10.25,16.77,23.29,27.63,4.39,26.7,32.165,37.63,39.33
+Squid & cuttlefish,Squid & cuttlefish,Aquamaps,2.88,10.69,17.505,24.32,29.87,14.69,32.52,35.395,38.27,39.25
+Carnivorous plankton,Carnivorous plankton,Aquamaps,-1.71,-0.365,4.975,10.315,17.145,13.66,29.255,32.0875,34.92,37.805
+Temora longicornis,Temora longicornis,Aquamaps,0,7,10.75,14.5,17.5,0,0,20,40,40
+Herbivorous plankton (copepods),Herbivorous plankton,Aquamaps,3.468571429,8.698571429,13.84428571,18.99,27.12571429,9.034,29.588,32.629,35.67,37.812
+Gelatinous zooplankton,Gelatinous zooplankton,Aquamaps,-1.1,4.705,11.4925,18.28,27.685,4.72,19.27,27.38,35.49,39.41
+Large crabs + shrimps ,Large crabs + shrimps ,Aquamaps,5.22,8.85,12.655,16.46,22.67,10.34,32.07,33.855,35.64,38.28
+Blue mussels (aquaculture),Blue mussels,"Aquamaps expert (Bato, 2021)",-1,5.68,10.745,15.81,28.24,3.76,9.93,22.585,35.24,39.21
+Epifaunal macrobenthos (mobile grazers),Epifaunal macrobenthos,Aquamaps,0.5675,8.7775,11.9175,15.0575,24.3025,7.61,31.1475,33.55375,35.96,38.7875
+Infaunal macrobenthos,Infaunal macrobenthos,Aquamaps,2.26375,8.84375,12.584375,16.325,24.245,12.29875,29.66,32.836875,36.01375,38.91625
+Crangon,Crangon,"Aquamaps expert (Bato, 2021)",4,9.85,12.73,15.61,27,4.47,10.94,23.055,35.17,39.8
+Small mobile epifauna (swarming crustaceans),Small mobile epifauna,Aquamaps,7.4,9.57,10.93,12.29,18.48,26.45,31.97,33.5125,35.055,37.225
+Small infauna (polychaetes),Small infauna,Aquamaps,0.442,7.082,12.934,18.786,27.19,12.048,27.804,31.672,35.54,38.634
+Sessile epifauna,Sessile epifauna,Aquamaps,-0.3125,3.9575,9.7175,15.4775,27.9875,9.985,27.92,31.79125,35.6625,39.6525

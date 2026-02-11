@@ -1,0 +1,40 @@
+---
+title: "Temperature_Responses_CC"
+author: "Dries Lorré"
+date: "2025-09-26"
+output: html_document
+---
+# Load required libraries
+```{r, echo = FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+# Read data
+```{r}
+Temp_resp <- read.csv("Temp_sal_depth_ECOSIM_format_MS_NaN_removed.csv")
+SST_m <- read.csv("SST_m.csv")
+```
+First, add column Temperature to Temp_resp to enable look-up of monthly temperatures: minimum value = 0, maximum value = 40 (This was done manually in Excel)
+Next, link observed monthly temperature to environmental response (foraging compensation) of each species.
+```{r}
+# Loop through each species to interpolate responses
+species_names <- colnames(Temp_resp)[c(4:30)]  # Get all species column names, excluding 'Temperature'
+
+# Add columns for each species to SST_m (initializing with NA for now)
+species_response_time_series <- SST_m
+
+# Add empty columns for each species
+for (species in species_names) {
+  species_response_time_series[[species]] <- NA_real_
+}
+
+for (species in species_names) {
+  # Use approx() for linear interpolation of species response
+  interpolated_responses <- approx(Temp_resp$SST_month, Temp_resp[[species]], SST_m$SST_month)$y
+  
+  # Add the interpolated responses to the SST_m dataframe
+  species_response_time_series[[species]] <- interpolated_responses
+}
+
+# Now species_response_time_series contains the SST_m time series with the interpolated species responses.

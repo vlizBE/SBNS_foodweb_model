@@ -1,0 +1,81 @@
+---
+title: "Nutrient_EwE_TS"
+author: "Dries Lorré"
+date: "2025-10-15"
+output: html_document
+---
+
+In this script, the aggregated spatial data is converted into time series data compatible for EwE input
+
+Load packages
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+read in data
+```{r}
+P_cop <- read.csv("cmems_mod_nws_bgc-po4_my_7km-3D_P1M-m_1760530853823.csv")
+P_sch <- read.csv("Scheldemonitor_N_P.csv") %>%
+  filter(parametername == "Fosfaat, totaal in mg/l na filtratie in oppervlaktewater") %>%
+  filter(stationname == "Walcheren 20 km uit de kust") %>%
+  select(datetime, value)
+P_thames <- read.csv("Thames_TotalReactivePhosphorus_yearly.csv")
+head(P_thames)
+
+ggplot(P_cop, aes(time, po4)) + 
+  geom_point()
+
+ggplot(P_sch, aes (x = datetime, y = value)) + 
+  geom_point() + ylim(0,0.12)
+```
+
+Make yearly data:
+```{r}
+library(lubridate)
+
+# --- 1. Prepare and aggregate P_cop ---
+P_cop_yearly <- P_cop %>%
+  mutate(year = year(ymd_hms(time))) %>%   # extract year from time column
+  group_by(year) %>%
+  summarise(P_copernicus = mean(po4, na.rm = TRUE))
+
+# --- 2. Prepare and aggregate P_sch ---
+P_sch_yearly <- P_sch %>%
+  mutate(year = year(ymd_hms(datetime))) %>%  # extract year
+  group_by(year) %>%
+  summarise(P_schelde = mean(value, na.rm = TRUE))
+
+# --- 3. Combine the two datasets ---
+P_trend <- full_join(P_cop_yearly, P_sch_yearly, by = "year") %>%
+  arrange(year)
+
+ # --- 4. Merge P data with TRP data ---
+combined_yearly <- full_join(P_trend, P_thames, by = "year")
+
+# --- 5. Repeat each row 12× to make monthly dataset ---
+combined_monthly <- combined_yearly %>%
+  slice(rep(1:n(), each = 12)) %>%
+  mutate(month = rep(1:12, times = nrow(combined_yearly)),
+         date = ymd(paste(year, month, "01", sep = "-")))
+
+# --- 6. View result ---
+head(combined_monthly, 15)
+
+# --- 3.2 Repeat each year 12 times (once per month) ---
+P_monthly <- P_trend %>%
+  slice(rep(1:n(), each = 12)) %>%      # repeat each row 12 times
+  mutate(month = rep(1:12, times = nrow(P_trend)))  # add month column 1–12
+write.csv(P_monthly, "P_monthly_EwE.csv")
+
+# --- 4. Inspect result ---
+head(P_trend)
+
+ggplot(combined_monthly, aes(year, P_copernicus)) + 
+  geom_line(color = "blue") + 
+  geom_line(aes(y = 13*P_schelde), color = "red") + 
+  geom_line(aes(y= 0.5*TRP_raw)) + theme_bw()
+            
+```
+

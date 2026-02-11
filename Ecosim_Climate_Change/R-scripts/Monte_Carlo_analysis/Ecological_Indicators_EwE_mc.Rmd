@@ -1,0 +1,553 @@
+---
+title: "Ecological_Indicators_EwE_mc"
+author: "Dries Lorré"
+date: "2025-11-18"
+output: html_document
+---
+
+Packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+Read full indicator data
+```{r}
+# readLines("C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_SSP1_2.6/mc_SSP1-2.6/biodiv_ind_Monte Carlo.csv", n = 20) --> to check header structure
+
+# Scenario SSP1-2.6
+EI_2.6 <- read.csv(
+  "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_3_SSP1-2.6/mc_SSP1-2.6/biodiv_ind_Monte Carlo.csv",
+  skip = 8,        # skip metadata + blank lines
+  header = TRUE,   # line 9 becomes header
+  check.names = FALSE   # keep column names with spaces and quotes
+)
+
+# Scenario SSP2-4.5
+EI_4.5 <- read.csv(
+  "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_3_SSP2_4.5/mc_SSP2-4.5/biodiv_ind_Monte Carlo.csv",
+  skip = 8,        # skip metadata + blank lines
+  header = TRUE,   # line 9 becomes header
+  check.names = FALSE   # keep column names with spaces and quotes
+)
+
+# # Scenario SSP3-7.0
+EI_7.0 <- read.csv(
+  "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_3_SSP3_7.0/mc_SSP3-7.0/biodiv_ind_Monte Carlo.csv",
+  skip = 8,        # skip metadata + blank lines
+  header = TRUE,   # line 9 becomes header
+  check.names = FALSE   # keep column names with spaces and quotes
+)
+
+# BEST FITTING MODEL DATA:
+EI_BF_2.6 <- read.csv(
+  "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_3_SSP1-2.6/ecosim_SSP1-2.6/biodiv_ind_Ecosim.csv",
+  skip = 8,        # skip metadata + blank lines
+  header = TRUE,   # line 9 becomes header
+  check.names = FALSE   # keep column names with spaces and quotes
+)
+
+EI_BF_4.5 <- read.csv(
+  "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_3_SSP2_4.5/ecosim_SSP2-4.5/biodiv_ind_Ecosim.csv",
+  skip = 8,        # skip metadata + blank lines
+  header = TRUE,   # line 9 becomes header
+  check.names = FALSE   # keep column names with spaces and quotes
+)
+
+EI_BF_7.0 <- read.csv(
+  "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output/SBNS_1991_2023_CC_adapted_3_SSP3_7.0/ecosim_SSP3-7.0/biodiv_ind_Ecosim.csv",
+  skip = 8,        # skip metadata + blank lines
+  header = TRUE,   # line 9 becomes header
+  check.names = FALSE   # keep column names with spaces and quotes
+)
+```
+
+Make selection for faster handling
+```{r}
+# Selection of iterations?
+# Can be added later (iteration selection in large script MC)
+
+# Selection of indicators?
+# EI_2.6 <- EI_2.6[,-((ncol(EI_2.6)-12):ncol(EI_2.6))]
+# #
+# EI_4.5 <- EI_4.5[,-((ncol(EI_4.5)-12):ncol(EI_4.5))]
+# #
+# EI_7.0 <- EI_7.0[,-((ncol(EI_7.0)-12):ncol(EI_7.0))]
+# #
+# EI_BF_2.6 <- EI_BF_2.6[,-((ncol(EI_BF_2.6)-12):ncol(EI_BF_2.6))]
+# #
+# EI_BF_4.5 <- EI_BF_4.5[,-((ncol(EI_BF_4.5)-12):ncol(EI_BF_4.5))]
+# 
+# EI_BF_7.0 <- EI_BF_7.0[,-((ncol(EI_BF_7.0)-12):ncol(EI_BF_7.0))]
+```
+
+Plot data preparations
+```{r}
+# Biomass-based indicators
+biomass_inds <- c(
+  "Total B", 
+  # "Commercial B", 
+  "Fish B", 
+  "Invertebrates B"#,
+  # "Invertebrates / Fish B", "Demersal B", "Pelagic B",
+  # "Demersal / Pelagic B", "Predatory B"
+)
+
+# Catch-based indicators
+catch_inds <- c(
+  "Total C"#, 
+  # "Fish C", "Invertebrate C", "Invertebrates / Fish C",
+  # "Demersal C", "Pelagic C", "Demersal / pelagic C", "Predatory C"
+)
+
+# Trophic-level related indicators (adjust as you wish)
+trophic_inds <- c(
+  "TL catch", 
+  # "MTI",
+  "TL community"#, 
+  # "TL community 2","TL community 3,25", "TL community 4"
+)
+```
+
+
+lists of scenario datasets
+```{r}
+# Monte Carlo scenarios
+mc_list <- list(
+  "SSP1-2.6" = EI_2.6,
+  "SSP2-4.5" = EI_4.5,
+  "SSP3-7.0" = EI_7.0
+)
+
+# Best-fit runs for each scenario
+bf_list <- list(
+  "SSP1-2.6" = EI_BF_2.6,
+  "SSP2-4.5" = EI_BF_4.5,
+  "SSP3-7.0" = EI_BF_7.0
+)
+
+# fixed colours per scenario (nice for papers)
+scenario_cols <- c(
+  "SSP1-2.6" = "#56B4E9",
+  "SSP2-4.5" = "#E69F00",
+  "SSP3-7.0" = "#CC79A7"
+)
+```
+
+Multi-scenario plot function (update)
+```{r}
+plot_indicator_facets_multi_hist <- function(mc_list, 
+                                             bf_list, indicators,
+                                             hist_scenario = "SSP1-2.6",
+                                             split_date   = as.Date("2024-01-01"),
+                                             start_year   = 1991,
+                                             start_month  = 1,
+                                             facet_title  = "Indicators",
+                                             scenario_cols = NULL) {
+  # safety check
+  if (!setequal(names(mc_list), names(bf_list))) {
+    stop("mc_list and bf_list must have the same named scenarios.")
+  }
+  if (!(hist_scenario %in% names(mc_list))) {
+    stop("hist_scenario must be one of the names in mc_list / bf_list.")
+  }
+
+  scen_names <- names(mc_list)
+
+  # ------- MONTE CARLO: all scenarios, long format -------
+  mc_long <- bind_rows(
+    lapply(scen_names, function(scen) {
+      df <- mc_list[[scen]] %>%
+        mutate(
+          Year  = start_year + (Time - 1) %/% 12,
+          Month = (Time - 1) %% 12 + start_month,
+          Date  = as.Date(sprintf("%d-%02d-01", Year, Month))
+        ) %>%
+        select(Trial, Date, all_of(indicators)) %>%
+        pivot_longer(
+          cols = all_of(indicators),
+          names_to  = "Indicator",
+          values_to = "value"
+        )
+      df$Scenario <- scen
+      df
+    }),
+    .id = NULL
+  )
+
+  # ------- BEST FIT: all scenarios, long format -------
+  bf_long <- bind_rows(
+    lapply(scen_names, function(scen) {
+      df <- bf_list[[scen]] %>%
+        mutate(
+          Year  = start_year + (Time - 1) %/% 12,
+          Month = (Time - 1) %% 12 + start_month,
+          Date  = as.Date(sprintf("%d-%02d-01", Year, Month))
+        ) %>%
+        select(Date, all_of(indicators)) %>%
+        pivot_longer(
+          cols = all_of(indicators),
+          names_to  = "Indicator",
+          values_to = "value"
+        )
+      df$Scenario <- scen
+      df
+    }),
+    .id = NULL
+  )
+
+  ## ----------------- HISTORICAL PART (from one scenario) -----------------
+
+  # Historical Monte Carlo (SSP1-2.6 only, up to split_date)
+  hist_mc_long <- mc_long %>%
+    filter(Scenario == hist_scenario,
+           Date < split_date)
+
+  hist_ci_long <- hist_mc_long %>%
+    group_by(Indicator, Date) %>%
+    summarise(
+      lower = quantile(value, 0.05, na.rm = TRUE),
+      upper = quantile(value, 0.95, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  # Historical BEST FIT (SSP1-2.6 only)
+  hist_bf_long <- bf_long %>%
+    filter(Scenario == hist_scenario,
+           Date < split_date)
+
+  ## ----------------- FUTURE PART (all scenarios, from split_date) -----------------
+
+  future_mc_long <- mc_long %>%
+    filter(Date >= split_date)
+
+  future_ci_long <- future_mc_long %>%
+    group_by(Scenario, Indicator, Date) %>%
+    summarise(
+      lower = quantile(value, 0.05, na.rm = TRUE),
+      upper = quantile(value, 0.95, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  future_bf_long <- bf_long %>%
+    filter(Date >= split_date)
+
+  ## ----------------- PLOT -----------------
+
+  p <- ggplot() +
+    # --- Historical ribbon (grey, same for all scenarios) ---
+    geom_ribbon(
+      data = hist_ci_long,
+      aes(x = Date, ymin = lower, ymax = upper),
+      fill  = "grey60",
+      alpha = 0.4
+    ) +
+    # (Optional) historical MC spaghetti in light grey – comment out if not wanted
+    # geom_line(
+    #   data = hist_mc_long,
+    #   aes(x = Date, y = value, group = interaction(Trial, Indicator)),
+    #   colour    = "grey50",
+    #   alpha     = 0.05,
+    #   linewidth = 0.2
+    # ) +
+    # Historical BEST FIT (black)
+    geom_line(
+      data = hist_bf_long,
+      aes(x = Date, y = value),
+      colour    = "black",
+      linewidth = 0.8
+    ) +
+    # --- Future: scenario-specific ribbons ---
+    geom_ribbon(
+      data = future_ci_long,
+      aes(x = Date, ymin = lower, ymax = upper, fill = Scenario),
+      alpha = 0.25
+    ) +
+    # Future: scenario-specific MC spaghetti
+    # geom_line(
+    #   data = future_mc_long,
+    #   aes(x = Date, y = value,
+    #       group  = interaction(Scenario, Trial),
+    #       colour = Scenario),
+    #   alpha     = 0.03,
+    #   linewidth = 0.2
+    # ) +
+    # Future: scenario-specific BEST FIT
+    geom_line(
+      data = future_bf_long,
+      aes(x = Date, y = value, colour = Scenario),
+      linewidth = 0.9
+    ) +
+    facet_wrap(~ Indicator, scales = "free_y") +
+    scale_x_date(
+      breaks = as.Date(c("1991-01-01", "2025-01-01", "2050-01-01", "2100-01-01")),
+      labels = c("1991", "2025", "2050", "2100")
+    ) +
+    labs(
+      x = "Year",
+      y = "",
+      colour = "Scenario",
+      fill   = "Scenario"#,
+      # title  = facet_title
+    ) +
+    theme_bw()
+
+  if (!is.null(scenario_cols)) {
+    p <- p +
+      scale_colour_manual(values = scenario_cols) +
+      scale_fill_manual(values   = scenario_cols)
+  }
+
+  p
+}
+```
+
+update test:
+```{r}
+plot_indicator_facets_multi_hist <- function(mc_list, 
+                                             bf_list, indicators,
+                                             hist_scenario = "SSP1-2.6",
+                                             split_date   = as.Date("2024-01-01"),
+                                             start_year   = 1991,
+                                             start_month  = 1,
+                                             facet_title  = "Indicators",
+                                             scenario_cols = NULL) {
+  # safety check
+  if (!setequal(names(mc_list), names(bf_list))) {
+    stop("mc_list and bf_list must have the same named scenarios.")
+  }
+  if (!(hist_scenario %in% names(mc_list))) {
+    stop("hist_scenario must be one of the names in mc_list / bf_list.")
+  }
+
+  scen_names <- names(mc_list)
+
+  # ------- MONTE CARLO: all scenarios, long format -------
+  mc_long <- bind_rows(
+    lapply(scen_names, function(scen) {
+      df <- mc_list[[scen]] %>%
+        mutate(
+          Year  = start_year + (Time - 1) %/% 12,
+          Month = (Time - 1) %% 12 + start_month,
+          Date  = as.Date(sprintf("%d-%02d-01", Year, Month))
+        ) %>%
+        select(Trial, Date, all_of(indicators)) %>%
+        pivot_longer(
+          cols = all_of(indicators),
+          names_to  = "Indicator",
+          values_to = "value"
+        )
+      df$Scenario <- scen
+      df
+    }),
+    .id = NULL
+  )
+
+  # ------- BEST FIT: all scenarios, long format -------
+  bf_long <- bind_rows(
+    lapply(scen_names, function(scen) {
+      df <- bf_list[[scen]] %>%
+        mutate(
+          Year  = start_year + (Time - 1) %/% 12,
+          Month = (Time - 1) %% 12 + start_month,
+          Date  = as.Date(sprintf("%d-%02d-01", Year, Month))
+        ) %>%
+        select(Date, all_of(indicators)) %>%
+        pivot_longer(
+          cols = all_of(indicators),
+          names_to  = "Indicator",
+          values_to = "value"
+        )
+      df$Scenario <- scen
+      df
+    }),
+    .id = NULL
+  )
+
+    # Enforce indicator order in facets
+  mc_long$Indicator <- factor(mc_long$Indicator, levels = indicators)
+  bf_long$Indicator <- factor(bf_long$Indicator, levels = indicators)
+  ## ----------------- HISTORICAL PART (from one scenario) -----------------
+
+  # Historical Monte Carlo (SSP1-2.6 only, up to split_date)
+  hist_mc_long <- mc_long %>%
+    filter(Scenario == hist_scenario,
+           Date < split_date)
+
+  hist_ci_long <- hist_mc_long %>%
+    group_by(Indicator, Date) %>%
+    summarise(
+      lower = quantile(value, 0.05, na.rm = TRUE),
+      upper = quantile(value, 0.95, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  # Historical BEST FIT (SSP1-2.6 only)
+  hist_bf_long <- bf_long %>%
+    filter(Scenario == hist_scenario,
+           Date < split_date)
+
+  ## ----------------- FUTURE PART (all scenarios, from split_date) -----------------
+
+  future_mc_long <- mc_long %>%
+    filter(Date >= split_date)
+
+  future_ci_long <- future_mc_long %>%
+    group_by(Scenario, Indicator, Date) %>%
+    summarise(
+      lower = quantile(value, 0.05, na.rm = TRUE),
+      upper = quantile(value, 0.95, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  future_bf_long <- bf_long %>%
+    filter(Date >= split_date)
+
+  ## ----------------- Palette handling (match plot_hist_future) -----------------
+  scen_in_data <- sort(unique(future_ci_long$Scenario))
+
+  if (is.null(scenario_cols)) {
+    if (exists("scenario_cols", envir = .GlobalEnv)) {
+      scenario_cols <- get("scenario_cols", envir = .GlobalEnv)
+    } else {
+      stop("scenario_cols is NULL and no global scenario_cols found.")
+    }
+  }
+
+  if (length(scenario_cols) == 0) {
+    stop("scenario_cols is empty. Define it before calling plot_indicator_facets_multi_hist().")
+  }
+
+  missing_cols <- setdiff(scen_in_data, names(scenario_cols))
+  if (length(missing_cols) > 0) {
+    auto_cols <- scales::hue_pal()(length(missing_cols))
+    names(auto_cols) <- missing_cols
+    scenario_cols <- c(scenario_cols, auto_cols)
+  }
+
+  ## ----------------- PLOT -----------------
+
+  p <- ggplot() +
+    # --- Historical ribbon (grey, same alpha as plot_hist_future) ---
+    # geom_ribbon(
+    #   data = hist_ci_long,
+    #   aes(x = Date, ymin = lower, ymax = upper),
+    #   fill  = "grey70",
+    #   alpha = 0.5          # was 0.4
+    # ) +
+    # Historical BEST FIT (black, linewidth = 1)
+    # geom_line(
+    #   data = hist_bf_long,
+    #   aes(x = Date, y = value),
+    #   colour    = "black",
+    #   linewidth = 0.4        # was 0.8
+    # ) +
+    # --- Future: scenario-specific ribbons (same alpha = 0.25) ---
+    # geom_ribbon(
+    #   data = future_ci_long,
+    #   aes(x = Date, ymin = lower, ymax = upper, fill = Scenario),
+    #   alpha = 0.25
+    # ) +
+    # Future: scenario-specific BEST FIT (linewidth = 0.9, like plot_hist_future)
+    geom_line(
+      data = future_bf_long,
+      aes(x = Date, y = value, colour = Scenario),
+      linewidth = 0.7
+    ) +
+    facet_wrap(~ Indicator, scales = "free_y") +
+    scale_x_date(
+      breaks = as.Date(c(#"1991-01-01", 
+                         "2025-01-01", 
+                         "2050-01-01", "2100-01-01")),
+      labels = c(#"1991", 
+                 "2025", 
+                 "2050", "2100")
+    ) +
+    scale_colour_manual(values = scenario_cols) +
+    scale_fill_manual(values   = scenario_cols) +
+    labs(
+      x = "Year",
+      y = "",
+      colour = "Scenario",
+      fill   = "Scenario",
+      # title  = facet_title
+    ) +
+    theme_bw() +
+    theme(
+      strip.text      = element_text(size = 10),
+      strip.background= element_rect(fill = "white", colour = "black"),
+      axis.text       = element_text(size = 9),
+      axis.title      = element_text(size = 10),
+      legend.position = "bottom"
+    )
+
+  p
+}
+```
+
+
+Plot (updated)
+```{r}
+# Biomass-based indicators
+pb <- plot_indicator_facets_multi_hist(
+  mc_list       = mc_list,
+  bf_list       = bf_list,
+  indicators    = biomass_inds,
+  hist_scenario = "SSP1-2.6",
+  facet_title   = "Biomass-based indicators",
+  scenario_cols = scenario_cols
+) + theme(legend.position = "none")
+
+# Catch-based indicators
+pc <- plot_indicator_facets_multi_hist(
+  mc_list       = mc_list,
+  bf_list       = bf_list,
+  indicators    = catch_inds,
+  hist_scenario = "SSP1-2.6",
+  facet_title   = "Catch-based indicators",
+  scenario_cols = scenario_cols
+)
+
+# Trophic-level indicators
+p_tl_i <- plot_indicator_facets_multi_hist(
+  mc_list       = mc_list,
+  bf_list       = bf_list,
+  indicators    = trophic_inds,
+  hist_scenario = "SSP1-2.6",
+  facet_title   = "Trophic-level indicators",
+  scenario_cols = scenario_cols
+)+ theme(legend.position = "none")
+
+# library(patchwork)
+
+pb / (pc + p_tl_i)
+ggsave("B_indicator_4.png", pb, width = 4, height = 4, dpi = 800)
+ggsave("c_indicator_4.png", pc, width = 4, height = 4, dpi = 800)
+ggsave("TL_indicators_4.png", p_tl_i, width = 4, height = 4, dpi = 800)
+```
+Combination of interesting indicators
+```{r}
+# Biomass-based indicators
+inds_paper <- c(
+  "Fish B", 
+  "Invertebrates B",
+  "Total B",
+  "TL community",
+  "TL catch",
+  "Total C"
+)
+
+p_inds_selection <- plot_indicator_facets_multi_hist(
+  mc_list       = mc_list,
+  bf_list       = bf_list,
+  indicators    = inds_paper,
+  hist_scenario = "SSP1-2.6",
+  facet_title   = "Biomass-based indicators",
+  scenario_cols = scenario_cols
+)
+
+p_inds_selection
+ggsave("Indicators_selection_1.png", p_inds_selection, width = 7, height = 4, dpi = 800)
+```
+

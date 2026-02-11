@@ -1,0 +1,3015 @@
+---
+title: "Biomass_Catch_EwE_mc"
+author: "Dries Lorré"
+date: "2025-11-20"
+output: html_document
+---
+
+packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(fs)
+library(ggtext)
+```
+
+Folders and paths
+# ```{r}
+# # Root folder where your scenario folders live
+# root_dir <- "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output"
+# 
+# # Monte Carlo scenario subfolder(s)
+# # Adjust names to your actual folder structure for the 3 scenarios
+# scenario_dirs <- c(
+#   "SSP1-2.6" = file.path(root_dir,
+#                          "SBNS_1991_2023_CC_adapted_2_SSP1_2.6/mc_SSP1-2.6"),
+#   "SSP2-4.5" = file.path(root_dir,
+#                          "SBNS_1991_2023_CC_adapted_2_SSP2_4.5/mc_SSP2-4.5"),
+#   "SSP3-7.0" = file.path(root_dir,
+#                          "SBNS_1991_2023_CC_adapted_2_SSP3_7.0/mc_SSP3-7.0")
+# )
+# 
+# # Monte Carlo INPUT folders (where mc_trialXXXXX_Biomass.csv live)
+# mc_input_dirs <- c(
+#   "SSP1-2.6" = file.path(root_dir,
+#                          "SBNS_1991_2023_CC_adapted_2_SSP1_2.6/mc_SSP1-2.6/mc_input"),
+#   "SSP2-4.5" = file.path(root_dir,
+#                          "SBNS_1991_2023_CC_adapted_2_SSP2_4.5/mc_SSP2-4.5/mc_input"),
+#   "SSP3-7.0" = file.path(root_dir,
+#                          "SBNS_1991_2023_CC_adapted_2_SSP3_7.0/mc_SSP3-7.0/mc_input")
+# )
+# 
+# # Read in EwE species codes
+# species_codes <- read.csv("species_code.csv") 
+# 
+# # Best-fit files (one per scenario, adjust paths as needed)
+# # If you have only one best-fit (baseline) per species, just point to it
+# # Best fit biomass scenario SSP1-2.6
+# BF_biomass_2.6 <- file.path(root_dir,
+#                     "SBNS_1991_2023_CC_adapted_2_SSP1_2.6/ecosim_SSP1-2.6/biomass_annual.csv")
+# # Best fit biomass scenario SSP2-4.5
+# BF_biomass_4.5<- file.path(root_dir,
+#                    "SBNS_1991_2023_CC_adapted_2_SSP2_4.5/ecosim_SSP2-4.5/biomass_annual.csv")
+# # Best fit biomass scenario SSP3-7.0
+# BF_biomass_7.0<- file.path(root_dir,
+#                    "SBNS_1991_2023_CC_adapted_2_SSP3_7.0/ecosim_SSP3-7.0/biomass_annual.csv")
+# # Best fit catch scenario SSP1-2.6
+# BF_catch_2.6   <- file.path(root_dir,"SBNS_1991_2023_CC_adapted_2_SSP1_2.6/ecosim_SSP1-2.6/catch_annual.csv")
+# # Best fit catch scenario SSP2-4.5
+# BF_catch_4.5   <- file.path(root_dir,"SBNS_1991_2023_CC_adapted_2_SSP2_4.5/ecosim_SSP2-4.5/catch_annual.csv")
+# # Best fit catch scenario SSP3-7.0
+# BF_catch_7.0   <- file.path(root_dir,"SBNS_1991_2023_CC_adapted_2_SSP3_7.0/ecosim_SSP3-7.0/catch_annual.csv")
+# 
+# # Best-fit file vectors (named by scenario)
+# bestfit_biomass_files <- c(
+#   "SSP1-2.6" = BF_biomass_2.6,
+#   "SSP2-4.5" = BF_biomass_4.5,
+#   "SSP3-7.0" = BF_biomass_7.0
+# )
+# 
+# bestfit_catch_files <- c(
+#   "SSP1-2.6" = BF_catch_2.6,
+#   "SSP2-4.5" = BF_catch_4.5,
+#   "SSP3-7.0" = BF_catch_7.0
+# )
+# 
+# # fixed colours per scenario (for publication-quality plots)
+# scenario_cols <- c(
+#   "SSP1-2.6" = "#56B4E9",
+#   "SSP2-4.5" = "#E69F00",
+#   "SSP3-7.0" = "#CC79A7"
+# )
+# ```
+
+```{r}
+# Root folder where your scenario folders live
+root_dir <- "C:/Users/dlorr/OneDrive - UGent/Documents/EwE output"
+
+# Monte Carlo scenario subfolder(s)
+# Adjust names to your actual folder structure for the 3 scenarios
+scenario_dirs <- c(
+  "SSP1-2.6" = file.path(root_dir,
+                         "SBNS_1991_2023_CC_adapted_3_SSP1-2.6/mc_SSP1-2.6"),
+  "SSP2-4.5" = file.path(root_dir,
+                         "SBNS_1991_2023_CC_adapted_3_SSP2_4.5/mc_SSP2-4.5"),
+  "SSP3-7.0" = file.path(root_dir,
+                         "SBNS_1991_2023_CC_adapted_3_SSP3_7.0/mc_SSP3-7.0")
+)
+
+# Monte Carlo INPUT folders (where mc_trialXXXXX_Biomass.csv live)
+mc_input_dirs <- c(
+  "SSP1-2.6" = file.path(root_dir,
+                         "SBNS_1991_2023_CC_adapted_3_SSP1-2.6/mc_SSP1-2.6/mc_input"),
+  "SSP2-4.5" = file.path(root_dir,
+                         "SBNS_1991_2023_CC_adapted_3_SSP2_4.5/mc_SSP2-4.5/mc_input"),
+  "SSP3-7.0" = file.path(root_dir,
+                         "SBNS_1991_2023_CC_adapted_3_SSP3_7.0/mc_SSP3-7.0/mc_input")
+)
+
+# Read in EwE species codes
+species_codes <- read.csv("species_code.csv") 
+
+# Best-fit files (one per scenario, adjust paths as needed)
+# If you have only one best-fit (baseline) per species, just point to it
+# Best fit biomass scenario SSP1-2.6
+BF_biomass_2.6 <- file.path(root_dir,
+                    "SBNS_1991_2023_CC_adapted_3_SSP1-2.6/ecosim_SSP1-2.6/biomass_annual.csv")
+# Best fit biomass scenario SSP2-4.5
+BF_biomass_4.5<- file.path(root_dir,
+                   "SBNS_1991_2023_CC_adapted_3_SSP2_4.5/ecosim_SSP2-4.5/biomass_annual.csv")
+# Best fit biomass scenario SSP3-7.0
+BF_biomass_7.0<- file.path(root_dir,
+                   "SBNS_1991_2023_CC_adapted_3_SSP3_7.0/ecosim_SSP3-7.0/biomass_annual.csv")
+# Best fit catch scenario SSP1-2.6
+BF_catch_2.6   <- file.path(root_dir,"SBNS_1991_2023_CC_adapted_3_SSP1-2.6/ecosim_SSP1-2.6/catch_annual.csv")
+# Best fit catch scenario SSP2-4.5
+BF_catch_4.5   <- file.path(root_dir,"SBNS_1991_2023_CC_adapted_3_SSP2_4.5/ecosim_SSP2-4.5/catch_annual.csv")
+# Best fit catch scenario SSP3-7.0
+BF_catch_7.0   <- file.path(root_dir,"SBNS_1991_2023_CC_adapted_3_SSP3_7.0/ecosim_SSP3-7.0/catch_annual.csv")
+
+# Best-fit file vectors (named by scenario)
+bestfit_biomass_files <- c(
+  "SSP1-2.6" = BF_biomass_2.6,
+  "SSP2-4.5" = BF_biomass_4.5,
+  "SSP3-7.0" = BF_biomass_7.0
+)
+
+bestfit_catch_files <- c(
+  "SSP1-2.6" = BF_catch_2.6,
+  "SSP2-4.5" = BF_catch_4.5,
+  "SSP3-7.0" = BF_catch_7.0
+)
+
+# fixed colours per scenario (for publication-quality plots)
+scenario_cols <- c(
+  "SSP1-2.6" = "#56B4E9",
+  "SSP2-4.5" = "#E69F00",
+  "SSP3-7.0" = "#CC79A7"
+)
+```
+
+Helper function to check SS values per MC trail (per scenario)
+```{r}
+# Read SS for all trials of ONE scenario
+read_ss_scenario <- function(scenario_name, input_dir) {
+  
+  # All Biomass trial files in that folder
+  files <- fs::dir_ls(
+    input_dir,
+    type   = "file",
+    regexp = "mc_trial[0-9]+_Biomass\\.csv$"
+  )
+  
+  purrr::map_dfr(
+    files,
+    function(f) {
+      fname <- basename(f)
+      # extract trial number from filename
+      trial_str <- str_extract(fname, "[0-9]+")
+      trial_nr  <- as.integer(trial_str)
+      
+      # read line 11
+      line11 <- readLines(f, n = 11, warn = FALSE)[11]
+      
+      # extract first numeric in that line
+      ss_val <- str_extract(line11, "[0-9eE+\\.-]+")
+      ss_val <- as.numeric(ss_val)
+      
+      tibble::tibble(
+        scenario = scenario_name,
+        trial    = trial_nr,
+        SS       = ss_val
+      )
+    }
+  )
+}
+```
+
+Make trail - SS overview
+```{r}
+ss_overview <- purrr::map2_dfr(
+  names(mc_input_dirs),
+  mc_input_dirs,
+  read_ss_scenario
+)
+
+# Optional: save to disk so you can inspect / reuse
+# write.csv(ss_overview,
+#           file = file.path(root_dir, "mc_SS_overview.csv"),
+#           row.names = FALSE)
+
+# Select the 1000 best runs per scenario
+best_trials <- ss_overview %>%
+  filter(trial < 1001) %>%
+  group_by(scenario) %>%
+  arrange(SS, .by_group = TRUE) %>%
+  mutate(rank = dplyr::row_number()) %>%
+  filter(rank <= 1000) %>%         # change 1000 if you want fewer/more
+  ungroup()
+
+# Turn into a named list: scenario -> vector of trial numbers
+trials_by_scenario <- best_trials %>%
+  group_by(scenario) %>%
+  summarise(trials = list(trial), .groups = "drop") %>%
+  tibble::deframe()
+```
+
+
+Helper function to read EwE annual biomass and catch data
+```{r}
+read_ewe_annual <- function(file) {
+  # Skip the first 9 lines of metadata
+  df <- read.csv(file, skip = 9, check.names = FALSE)
+  
+  # First column is "year\\group" -> rename to "year"
+  names(df)[1] <- "year"
+  
+  # Long format: group = 1..44, value = biomass or catch
+  df_long <- df |>
+    pivot_longer(
+      cols = -year,
+      names_to = "group",
+      values_to = "value"
+    ) |>
+    mutate(
+      group = as.integer(group),
+      year = as.integer(year)
+    )
+  
+  return(df_long)
+}
+```
+
+Monte-Carlo outputs for all scenarios
+Helper function to read all trials of ONE scenario and ONE output type
+```{r}
+# type = "biomass_annual.csv" or "catch_annual.csv"
+read_mc_scenario <- function(scenario_name,
+                             scenario_dir,
+                             type = c("biomass", "catch"),
+                             trials_keep = NULL) {
+  type <- match.arg(type)
+  
+  file_name <- if (type == "biomass") "biomass_annual.csv" else "catch_annual.csv"
+  
+  trial_dirs <- fs::dir_ls(
+    scenario_dir,
+    type   = "directory",
+    regexp = "mc_output_trial[0-9]+$"
+  )
+  
+  mc_data <- purrr::map_dfr(
+    trial_dirs,
+    function(trial_dir) {
+      trial_id <- basename(trial_dir)                 # e.g. "mc_output_trial0001"
+      # extract digits and convert to integer
+      trial_nr <- as.integer(stringr::str_extract(trial_id, "[0-9]+"))
+      
+      # if we have a filter and this trial is not in it -> skip
+      if (!is.null(trials_keep) && !(trial_nr %in% trials_keep)) {
+        return(NULL)
+      }
+      
+      file_path <- file.path(trial_dir, file_name)
+      if (!fs::file_exists(file_path)) {
+        warning("File missing: ", file_path)
+        return(NULL)
+      }
+      
+      dat <- read_ewe_annual(file_path) %>%
+        mutate(
+          scenario = scenario_name,
+          trial    = trial_nr
+        )
+      
+      return(dat)
+    }
+  )
+  
+  mc_data <- mc_data %>%
+    left_join(species_codes, by = "group")
+  
+  return(mc_data)
+}
+
+# # type = "biomass_annual.csv" or "catch_annual.csv"
+# read_mc_scenario <- function(scenario_name, scenario_dir, type = c("biomass", "catch")) {
+#   type <- match.arg(type)
+#   
+#   file_name <- if (type == "biomass") "biomass_annual.csv" else "catch_annual.csv"
+#   
+#   # Assume folders named mc_output_trial0001 ... mc_output_trial2000
+#   trial_dirs <- dir_ls(scenario_dir, type = "directory", regexp = "mc_output_trial[0-9]+$")
+#   
+#   # Read every trial
+#   mc_data <- map_dfr(
+#     trial_dirs,
+#     function(trial_dir) {
+#       trial_id <- basename(trial_dir)              # e.g. "mc_output_trial0001"
+#       trial_nr <- as.integer(sub("mc_output_trial", "", trial_id))
+#       
+#       file_path <- file.path(trial_dir, file_name)
+#       
+#       if (!file_exists(file_path)) {
+#         warning("File missing: ", file_path)
+#         return(NULL)
+#       }
+#       
+#       dat <- read_ewe_annual(file_path) |>
+#         mutate(
+#           scenario = scenario_name,
+#           trial    = trial_nr
+#         )
+#       
+#       return(dat)
+#     }
+#   )
+#   
+#   # Attach species names
+#   mc_data <- mc_data |>
+#     left_join(species_codes, by = "group")
+#   
+#   return(mc_data)
+# }
+```
+
+Helper function to read in reference data
+```{r}
+read_ref_wide <- function(file, species_codes) {
+  read.csv(file, check.names = FALSE) %>%
+    rename(year = Year) %>%
+    pivot_longer(
+      cols      = -year,
+      names_to  = "group",
+      values_to = "value"
+    ) %>%
+    mutate(
+      year  = as.integer(year),
+      group = as.integer(group)
+    ) %>%
+    left_join(species_codes, by = "group")
+}
+
+################################################ ALTER!
+# # Reference data (absolute values)
+# biomass_ref <- read_ref_wide(
+#   file.path( "TS_SBNS_CC_biomass_abs_3.csv"),
+#   species_codes
+# )
+# 
+# catch_ref <- read_ref_wide(
+#   file.path("TS_SBNS_CC_catch_abs_2.csv"),
+#   species_codes
+# )
+
+# Reference data (absolute values)
+biomass_ref <- read_ref_wide(
+  file.path( "TS_SBNS_CC_biomass_abs_4.csv"),
+  species_codes
+)
+
+catch_ref <- read_ref_wide(
+  file.path("TS_SBNS_CC_catch_abs_4.csv"),
+  species_codes
+)
+```
+
+Read everything (may take a bit for 2000 trials x 3 scenarios)
+```{r}
+mc_biomass <- purrr::map2_dfr(
+  names(scenario_dirs), scenario_dirs,
+  ~ read_mc_scenario(
+      scenario_name = .x,
+      scenario_dir  = .y,
+      type          = "biomass",
+      trials_keep   = trials_by_scenario[[.x]]
+    )
+)
+
+mc_catch <- purrr::map2_dfr(
+  names(scenario_dirs), scenario_dirs,
+  ~ read_mc_scenario(
+      scenario_name = .x,
+      scenario_dir  = .y,
+      type          = "catch",
+      trials_keep   = trials_by_scenario[[.x]]
+    )
+)
+
+# mc_biomass <- map2_dfr(
+#   names(scenario_dirs), scenario_dirs,
+#   ~ read_mc_scenario(.x, .y, type = "biomass")
+# )
+
+# write.csv(mc_biomass, "mc_biomass_2.csv", row.names = FALSE)
+write.csv(mc_biomass, "mc_biomass_3.csv", row.names = FALSE)
+# mc_catch <- map2_dfr(
+#   names(scenario_dirs), scenario_dirs,
+#   ~ read_mc_scenario(.x, .y, type = "catch")
+# )
+
+# write.csv(mc_catch, "mc_catch_2.csv", , row.names = FALSE)
+write.csv(mc_catch, "mc_catch_3.csv", , row.names = FALSE)
+```
+
+
+################################################################################
+START SCRIPT FROM HERE - BIOMASS AND CATCH FILES STORED ON PC 
+(OTHERS ON ONEDRIVE)
+```{r}
+# mc_biomass <- read.csv("mc_biomass.csv")
+# mc_catch <- read.csv("mc_catch.csv")
+```
+
+################################################################################
+START HERE 21/11/2025
+
+BEST FIT NEEDED FOR EVERY SEPARATE SCENARIO!
+Read data of best fitting model run
+```{r}
+# Helper to read ONE best-fit scenario file
+read_bestfit_scenario <- function(scenario_name, file_path) {
+  read_ewe_annual(file_path) %>%
+    left_join(species_codes, by = "group") %>%
+    mutate(
+      scenario = scenario_name,
+      trial    = NA_integer_
+    )
+}
+
+# Read ALL best-fit scenarios
+bestfit_biomass <- map2_dfr(
+  names(bestfit_biomass_files),
+  bestfit_biomass_files,
+  ~ read_bestfit_scenario(.x, .y)
+)
+
+bestfit_catch <- map2_dfr(
+  names(bestfit_catch_files),
+  bestfit_catch_files,
+  ~ read_bestfit_scenario(.x, .y)
+)
+```
+
+Helper function for plotting historical, scenario and best fit data
+```{r}
+plot_hist_future <- function(mc_df,
+                             bestfit_df,
+                             species_sel,
+                             ref_df = NULL,           # reference data (or NULL)
+                             hist_scenario = "SSP1-2.6",
+                             hist_start = 1991,
+                             hist_end   = 2023,
+                             ylab       = "Biomass",
+                             show_bestfit_future = TRUE,
+                             scenario_cols = NULL) {  # <-- default is NULL, NOT scenario_cols
+  
+  # Clean scenario names
+  mc_df      <- mc_df      %>% mutate(scenario = trimws(scenario))
+  bestfit_df <- bestfit_df %>% mutate(scenario = trimws(scenario))
+  hist_scenario <- trimws(hist_scenario)
+  
+  ## -----------------------
+  ## Historical: SSP1-2.6 only
+  ## -----------------------
+  hist_mc <- mc_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  == species_sel,
+      year >= hist_start,
+      year <= hist_end
+    ) %>%
+    group_by(year) %>%
+    summarise(
+      q25 = quantile(value, 0.25, na.rm = TRUE),
+      q50 = quantile(value, 0.50,  na.rm = TRUE),
+      q75 = quantile(value, 0.75, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  hist_best <- bestfit_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  == species_sel,
+      year >= hist_start,
+      year <= hist_end
+    )
+  
+  ## -----------------------
+  ## Future: all scenarios from 2024+
+  ## -----------------------
+  future_mc <- mc_df %>%
+    filter(
+      species == species_sel,
+      year >= hist_end + 1
+    ) %>%
+    group_by(scenario, year) %>%
+    summarise(
+      q25 = quantile(value, 0.25, na.rm = TRUE),
+      q50 = quantile(value, 0.50,  na.rm = TRUE),
+      q75 = quantile(value, 0.75, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  future_best <- bestfit_df %>%
+    filter(
+      species == species_sel,
+      year >= hist_end + 1
+    )
+  
+  ## -----------------------
+  ## Palette handling (fixed colours)
+  ## -----------------------
+  scen_in_data <- sort(unique(future_mc$scenario))
+  
+  # If no palette passed, try to use the global one
+  if (is.null(scenario_cols)) {
+    if (exists("scenario_cols", envir = .GlobalEnv)) {
+      scenario_cols <- get("scenario_cols", envir = .GlobalEnv)
+    } else {
+      stop("scenario_cols is NULL and no global scenario_cols found.")
+    }
+  }
+  
+  if (length(scenario_cols) == 0) {
+    stop("scenario_cols is empty. Define it before calling plot_hist_future().")
+  }
+  
+  # If new scenario names appear not in palette, auto-assign them
+  missing_cols <- setdiff(scen_in_data, names(scenario_cols))
+  if (length(missing_cols) > 0) {
+    auto_cols <- scales::hue_pal()(length(missing_cols))
+    names(auto_cols) <- missing_cols
+    scenario_cols <- c(scenario_cols, auto_cols)
+  }
+  
+  ## -----------------------
+  ## Reference points (for this species, if any)
+  ## -----------------------
+  ref_points <- NULL
+  if (!is.null(ref_df)) {
+    ref_points <- ref_df %>%
+      mutate(species = as.character(species)) %>%
+      filter(species == species_sel)
+    if (nrow(ref_points) == 0) ref_points <- NULL
+  }
+  
+  ## -----------------------
+  ## Plot
+  ## -----------------------
+  p <- ggplot() +
+    # Historical MC ribbon (grey)
+    geom_ribbon(
+      data = hist_mc,
+      aes(x = year, ymin = q25, ymax = q75),
+      fill  = "grey70",
+      alpha = 0.5
+    ) +
+    # Historical best-fit (black)
+    geom_line(
+      data = hist_best,
+      aes(x = year, y = value),
+      colour   = "black",
+      linewidth = 1
+    ) +
+    # Future MC ribbons (scenario colours)
+    geom_ribbon(
+      data = future_mc,
+      aes(x = year, ymin = q25, ymax = q75, fill = scenario),
+      alpha = 0.25
+    ) +
+    # Future MC medians (scenario colours)
+    # geom_line(
+    #   data = future_mc,
+    #   aes(x = year, y = q50, colour = scenario),
+    #   linewidth = 1
+    # ) +
+    scale_colour_manual(values = scenario_cols) +
+    scale_fill_manual(values  = scenario_cols) +
+    labs(
+      x = "Year",
+      y = ylab #,
+      # title = paste0(species_sel, " – historical + future scenarios"),
+      # subtitle = paste0(
+      #   hist_start, "–", hist_end,
+      #   ": grey 90% (SSP1-2.6 MC) + black best-fit. ",
+      #   hist_end + 1, "+: coloured scenarios."
+      # )
+    ) +
+    theme_bw()
+  
+  if (show_bestfit_future) {
+    p <- p +
+      geom_line(
+        data = future_best,
+        aes(x = year, y = value, colour = scenario),
+        # linetype = "dashed",
+        linewidth = 0.9
+      )
+  }
+  
+  if (!is.null(ref_points)) {
+    p <- p +
+      geom_point(
+        data = ref_points,
+        aes(x = year, y = value),
+        colour = "black",
+        size   = 0.5,
+        alpha  = 0.5
+      )
+  }
+  
+  return(p)
+}
+
+```
+
+Helper function for plotting historical, scenario
+```{r}
+plot_hist_future <- function(mc_df,
+                             bestfit_df,
+                             species_sel,
+                             hist_scenario = "SSP1-2.6",
+                             hist_start = 1991,
+                             hist_end   = 2023,
+                             ylab       = "Biomass",
+                             show_bestfit_future = TRUE,
+                             scenario_cols = NULL) {
+  
+  # --- ensure scenario names are clean ---
+  mc_df <- mc_df %>% mutate(scenario = trimws(scenario))
+  bestfit_df <- bestfit_df %>% mutate(scenario = trimws(scenario))
+  hist_scenario <- trimws(hist_scenario)
+  
+  ## -----------------------
+  ## Historical from SSP1-2.6 only
+  ## -----------------------
+  hist_mc <- mc_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  == species_sel,
+      year >= hist_start,
+      year <= hist_end
+    ) %>%
+    group_by(year) %>%
+    summarise(
+      q2.5  = quantile(value, 0.025, na.rm = TRUE),
+      q50   = quantile(value, 0.50,  na.rm = TRUE),
+      q97.5 = quantile(value, 0.975, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  hist_best <- bestfit_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  == species_sel,
+      year >= hist_start,
+      year <= hist_end
+    )
+  
+  ## -----------------------
+  ## Future: all scenarios from 2024+
+  ## -----------------------
+  future_mc <- mc_df %>%
+    filter(
+      species == species_sel,
+      year >= hist_end + 1
+    ) %>%
+    group_by(scenario, year) %>%
+    summarise(
+      q2.5  = quantile(value, 0.025, na.rm = TRUE),
+      q50   = quantile(value, 0.50,  na.rm = TRUE),
+      q97.5 = quantile(value, 0.975, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  future_best <- bestfit_df %>%
+    filter(
+      species == species_sel,
+      year >= hist_end + 1
+    )
+  
+  # --- palette handling ---
+  scen_in_data <- sort(unique(future_mc$scenario))
+  
+  if (is.null(scenario_cols)) {
+    # try to grab from global env if user forgot to pass it
+    if (exists("scenario_cols", envir = .GlobalEnv)) {
+      scenario_cols <- get("scenario_cols", envir = .GlobalEnv)
+    }
+  }
+  
+  if (is.null(scenario_cols) || length(scenario_cols) == 0) {
+    stop(
+      "scenario_cols is empty or not found. Define it BEFORE calling plot_hist_future(), e.g.\n",
+      "scenario_cols <- c('SSP1-2.6'='#56B4E9','SSP2-4.5'='#E69F00')"
+    )
+  }
+  
+  # add colours for scenarios not in palette (keeps plot working)
+  missing_cols <- setdiff(scen_in_data, names(scenario_cols))
+  if (length(missing_cols) > 0) {
+    warning(
+      "These scenarios were not in scenario_cols and got auto-colours: ",
+      paste(missing_cols, collapse = ", ")
+    )
+    auto_cols <- scales::hue_pal()(length(missing_cols))
+    names(auto_cols) <- missing_cols
+    scenario_cols <- c(scenario_cols, auto_cols)
+  }
+  
+  ## -----------------------
+  ## Plot
+  ## -----------------------
+  p <- ggplot() +
+    # historical MC ribbon (grey)
+    geom_ribbon(
+      data = hist_mc,
+      aes(x = year, ymin = q2.5, ymax = q97.5),
+      fill  = "grey70",
+      alpha = 0.5
+    ) +
+    # historical best-fit (black)
+    geom_line(
+      data = hist_best,
+      aes(x = year, y = value),
+      colour   = "black",
+      linewidth = 1
+    ) +
+    # future MC ribbons (scenario colours)
+    geom_ribbon(
+      data = future_mc,
+      aes(x = year, ymin = q2.5, ymax = q97.5, fill = scenario),
+      alpha = 0.25
+    ) +
+    # future MC medians (scenario colours)
+    # geom_line(
+    #   data = future_mc,
+    #   aes(x = year, y = q50, colour = scenario),
+    #   linewidth = 1
+    # ) +
+    labs(
+      x = "Year",
+      y = ylab,
+      title = paste0(species_sel, " – historical + future scenarios"),
+      subtitle = paste0(
+        hist_start, "–", hist_end,
+        ": grey 95% (SSP1-2.6 MC) + black best-fit. ",
+        hist_end + 1, "+: coloured scenarios."
+      )
+    ) +
+    scale_colour_manual(values = scenario_cols) +
+    scale_fill_manual(values = scenario_cols) +
+    theme_bw()
+  
+  if (show_bestfit_future) {
+    p <- p +
+      geom_line(
+        data = future_best,
+        aes(x = year, y = value, colour = scenario),
+        # linetype = "dashed",
+        linewidth = 0.9
+      )
+  }
+  
+  return(p)
+}
+```
+
+plotting single species (example)
+```{r}
+# Biomass
+plot_hist_future(
+  mc_df       = mc_biomass,
+  bestfit_df  = bestfit_biomass,
+  species_sel = "Whiting (adult)",    
+  ref_df      = biomass_ref,
+  ylab        = "Biomass (t/km²)"
+)
+
+# Catch
+plot_hist_future(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_sel = "Whiting (adult)",
+  ref_df      = catch_ref,
+  ylab        = "Catch (t/km²/yr)"
+)
+
+```
+
+Helper function for plotting combinations of functional groups (i.e. "guilds")
+```{r}
+# MC guild: sum per scenario-year-trial
+make_guild_mc <- function(mc_df,
+                          species_set = NULL,
+                          group_ids   = NULL,
+                          guild_name  = "Guild") {
+  df <- mc_df
+  if (!is.null(species_set)) df <- df %>% filter(species %in% species_set)
+  if (!is.null(group_ids))   df <- df %>% filter(group %in% group_ids)
+  
+  df %>%
+    group_by(scenario, year, trial) %>%
+    summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+    mutate(species = guild_name)
+}
+
+# Best-fit guild: sum per scenario-year
+make_guild_bestfit <- function(bestfit_df,
+                               species_set = NULL,
+                               group_ids   = NULL,
+                               guild_name  = "Guild") {
+  df <- bestfit_df
+  if (!is.null(species_set)) df <- df %>% filter(species %in% species_set)
+  if (!is.null(group_ids))   df <- df %>% filter(group %in% group_ids)
+  
+  df %>%
+    group_by(scenario, year) %>%
+    summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+    mutate(species = guild_name, trial = NA_integer_)
+}
+
+```
+
+Plotting combinations of functional groups (example)
+```{r}
+# Biomass
+flatfish <- c("Plaice (adult)", "Sole (adult)")
+
+# Biomass
+demersal_mc_bio <- make_guild_mc(
+  mc_df       = mc_biomass,
+  species_set = flatfish,
+  guild_name  = "flatfish"
+)
+
+demersal_best_bio <- make_guild_bestfit(
+  bestfit_df  = bestfit_biomass,
+  species_set = flatfish,
+  guild_name  = "flatfish"
+)
+
+plot_hist_future(
+  mc_df       = demersal_mc_bio,
+  bestfit_df  = demersal_best_bio,
+  species_sel = "flatfish",
+  ylab        = "Total biomass"
+)
+
+# Catch
+demersal_mc_catch <- make_guild_mc(
+  mc_df       = mc_catch,
+  species_set = flatfish,
+  guild_name  = "flatfish"
+)
+
+demersal_best_catch <- make_guild_bestfit(
+  bestfit_df  = bestfit_catch,
+  species_set = flatfish,
+  guild_name  = "flatfish"
+)
+
+plot_hist_future(
+  mc_df       = demersal_mc_catch,
+  bestfit_df  = demersal_best_catch,
+  species_sel = "flatfish",
+  ylab        = "Total catch"
+)
+```
+Helper function for facet grid plotting: combination of commercial species
+```{r}
+facet_hist_future <- function(mc_df,
+                              bestfit_df,
+                              species_set,
+                              ref_df = NULL,
+                              hist_scenario = "SSP1-2.6",
+                              hist_start = 1991,
+                              hist_end   = 2023,
+                              ylab       = "Biomass",
+                              show_bestfit_future = TRUE,
+                              scenario_cols = NULL,
+                              free_y = TRUE) {
+  # Clean up
+  mc_df      <- mc_df      %>% mutate(scenario = trimws(scenario))
+  bestfit_df <- bestfit_df %>% mutate(scenario = trimws(scenario))
+  hist_scenario <- trimws(hist_scenario)
+  
+  species_set <- as.character(species_set)
+  
+  ## -----------------------
+  ## Historical: SSP1-2.6 only
+  ## -----------------------
+  hist_mc <- mc_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  %in% species_set,
+      year >= hist_start,
+      year <= hist_end
+    ) %>%
+    group_by(species, year) %>%
+    summarise(
+      q5  = quantile(value, 0.1, na.rm = TRUE),
+      q50   = quantile(value, 0.50,  na.rm = TRUE),
+      q95 = quantile(value, 0.9, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  hist_best <- bestfit_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  %in% species_set,
+      year >= hist_start,
+      year <= hist_end
+    )
+  
+  ## -----------------------
+  ## Future: all scenarios from 2024+
+  ## -----------------------
+  future_mc <- mc_df %>%
+    filter(
+      species %in% species_set,
+      year >= hist_end + 1
+    ) %>%
+    group_by(scenario, species, year) %>%
+    summarise(
+      q5  = quantile(value, 0.1, na.rm = TRUE),
+      q50   = quantile(value, 0.50,  na.rm = TRUE),
+      q95 = quantile(value, 0.9, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  future_best <- bestfit_df %>%
+    filter(
+      species %in% species_set,
+      year >= hist_end + 1
+    )
+  
+  ## -----------------------
+  ## Palette handling
+  ## -----------------------
+  scen_in_data <- sort(unique(future_mc$scenario))
+  
+  if (is.null(scenario_cols)) {
+    if (exists("scenario_cols", envir = .GlobalEnv)) {
+      scenario_cols <- get("scenario_cols", envir = .GlobalEnv)
+    } else {
+      stop("scenario_cols is NULL and no global scenario_cols found.")
+    }
+  }
+  if (length(scenario_cols) == 0) {
+    stop("scenario_cols is empty. Define it before calling facet_hist_future().")
+  }
+  
+  missing_cols <- setdiff(scen_in_data, names(scenario_cols))
+  if (length(missing_cols) > 0) {
+    auto_cols <- scales::hue_pal()(length(missing_cols))
+    names(auto_cols) <- missing_cols
+    scenario_cols <- c(scenario_cols, auto_cols)
+  }
+  
+  ## -----------------------
+  ## Reference points (subset for selected species)
+  ## -----------------------
+  ref_points <- NULL
+  if (!is.null(ref_df)) {
+    ref_points <- ref_df %>%
+      mutate(species = as.character(species)) %>%
+      filter(species %in% species_set)
+    if (nrow(ref_points) == 0) ref_points <- NULL
+  }
+  
+  ## -----------------------
+  ## Build plot
+  ## -----------------------
+  p <- ggplot() +
+    # historical MC ribbon (grey) per species
+    geom_ribbon(
+      data = hist_mc,
+      aes(x = year, ymin = q5, ymax = q95, group = species),
+      fill  = "grey70",
+      alpha = 0.5
+    ) +
+    # historical best-fit (black)
+    geom_line(
+      data = hist_best,
+      aes(x = year, y = value, group = species),
+      colour   = "black",
+      linewidth = 0.4
+    ) +
+    # future MC ribbons (scenario colours)
+    geom_ribbon(
+      data = future_mc,
+      aes(x = year, ymin = q5, ymax = q95,
+          fill = scenario,
+          group = interaction(scenario, species)),
+      alpha = 0.25
+    ) +
+    # future MC medians (scenario colours)
+    # geom_line(
+    #   data = future_mc,
+    #   aes(x = year, y = q50,
+    #       colour = scenario,
+    #       group = interaction(scenario, species)),
+    #   linewidth = 0.7
+    # ) +
+    scale_colour_manual(values = scenario_cols) +
+    scale_x_continuous(
+      limits = c(1991, 2100),
+      breaks = c(1991, 2025, 2050, 2100)
+      ) +
+    scale_fill_manual(values  = scenario_cols) +
+    labs(
+      x = "Year",
+      y = ylab #,
+      # title = "Historical and future scenarios for selected species",
+      # subtitle = paste0(
+      #   hist_start, "–", hist_end,
+      #   ": grey 95% (", hist_scenario, " MC) + black best-fit. ",
+      #   hist_end + 1, "+: coloured scenarios."
+      # )
+    ) +
+    theme_bw() +
+    theme(
+      strip.text = element_text(size = 8),
+      strip.background = element_rect(fill = "white", colour = "black"),
+      axis.text = element_text(size = 7),
+      axis.title = element_text(size = 9),
+      legend.position = "bottom"
+  )
+  
+  # add best-fit lines for future if wanted
+  if (show_bestfit_future) {
+    p <- p +
+      geom_line(
+        data = future_best,
+        aes(x = year, y = value,
+            colour = scenario,
+            group = interaction(scenario, species)),
+        # linetype = "dashed",
+        linewidth = 0.7
+      )
+  }
+  
+  # add reference points if available
+  if (!is.null(ref_points)) {
+    p <- p +
+      geom_point(
+        data = ref_points,
+        aes(x = year, y = value),
+        colour = "black",
+        size   = 0.2,
+        alpha  = 0.4
+      )
+  }
+  
+  # facet by species
+  p <- p +
+    facet_wrap(
+      ~ species,
+      scales = if (free_y) "free_y" else "fixed" #,
+      # ncol = 3
+    )
+  
+  return(p)
+}
+
+```
+
+Plotting commercial species facet grids:
+```{r}
+# Define commercial subset
+commercial_species <- c(
+  "Cod (adult)",
+  "Whiting (adult)",
+  "Herring (adult)",
+  "Sprat",
+  "Mackerel",
+  "Plaice (adult)",
+  "Dab",
+  "Sole (adult)",
+  "Sea Bass"
+  # add/remove as needed
+)
+
+
+
+# Biomass
+p_bc <- facet_hist_future(
+  mc_df       = mc_biomass,
+  bestfit_df  = bestfit_biomass,
+  species_set = commercial_species,
+  ref_df      = biomass_ref,  # reference biomass points
+  ylab        = "Biomass (t/km²)",
+  free_y      = TRUE          # or FALSE if you want same y-axis for all
+) +
+  geom_blank(
+    data = facet_limits,
+    aes(x = 2000, y = ymin)
+  )
+
+# p_bc <- facet_hist_future(
+#   mc_df       = mc_biomass,
+#   bestfit_df  = bestfit_biomass,
+#   species_set = commercial_species,
+#   ref_df      = biomass_ref,
+#   ylab        = "Biomass (t/km²)",
+#   free_y      = TRUE
+# ) +
+#   geom_blank(data = facet_limits, aes(x = 2000, y = ymin)) +
+#   geom_blank(data = facet_limits, aes(x = 2000, y = ymax))
+# Catch
+p_cc <- facet_hist_future(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_set = commercial_species,
+  ref_df      = catch_ref,    # reference catch points
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE
+)
+
+p_bc
+p_cc
+
+# ggsave("Biomass_commercial.png", p_bc, width = 6, height = 4, dpi = 800)
+# ggsave("Catch_commercial.png", p_cc, width = 6, height = 4, dpi = 800)
+
+# ggsave("Biomass_commercial_3.png", p_bc, width = 6, height = 5, dpi = 800)
+# ggsave("Catch_commercial_3.png", p_cc, width = 6, height = 5, dpi = 800)
+
+ggsave("Biomass_commercial_4.png", p_bc, width = 6, height = 5, dpi = 800)
+ggsave("Catch_commercial_4.png", p_cc, width = 6, height = 5, dpi = 800)
+
+```
+
+Clip values to make plots focus more on projections:
+Update plotting function first
+```{r}
+facet_hist_future_clip <- function(mc_df,
+                              bestfit_df,
+                              species_set,
+                              ref_df = NULL,
+                              hist_scenario = "SSP1-2.6",
+                              hist_start = 1991,
+                              hist_end   = 2023,
+                              ylab       = "Biomass",
+                              show_bestfit_future = TRUE,
+                              scenario_cols = NULL,
+                              free_y = TRUE,
+                              facet_limits = NULL,
+                              clip_ribbons = TRUE,
+                              clip_bestfit = FALSE,
+                              clip_points  = TRUE) {
+  # Clean up
+  mc_df      <- mc_df      %>% mutate(scenario = trimws(scenario))
+  bestfit_df <- bestfit_df %>% mutate(scenario = trimws(scenario))
+  hist_scenario <- trimws(hist_scenario)
+  
+  species_set <- as.character(species_set)
+  
+  ## -----------------------
+  ## Historical: SSP1-2.6 only
+  ## -----------------------
+  hist_mc <- mc_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  %in% species_set,
+      year >= hist_start,
+      year <= hist_end
+    ) %>%
+    group_by(species, year) %>%
+    summarise(
+      q5  = quantile(value, 0.1, na.rm = TRUE),
+      q50   = quantile(value, 0.50,  na.rm = TRUE),
+      q95 = quantile(value, 0.9, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  hist_best <- bestfit_df %>%
+    filter(
+      scenario == hist_scenario,
+      species  %in% species_set,
+      year >= hist_start,
+      year <= hist_end
+    )
+  
+  ## -----------------------
+  ## Future: all scenarios from 2024+
+  ## -----------------------
+  future_mc <- mc_df %>%
+    filter(
+      species %in% species_set,
+      year >= hist_end + 1
+    ) %>%
+    group_by(scenario, species, year) %>%
+    summarise(
+      q5  = quantile(value, 0.1, na.rm = TRUE),
+      q50   = quantile(value, 0.50,  na.rm = TRUE),
+      q95 = quantile(value, 0.9, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  future_best <- bestfit_df %>%
+    filter(
+      species %in% species_set,
+      year >= hist_end + 1
+    )
+  
+  ## -----------------------
+  ## Palette handling
+  ## -----------------------
+  scen_in_data <- sort(unique(future_mc$scenario))
+  
+  if (is.null(scenario_cols)) {
+    if (exists("scenario_cols", envir = .GlobalEnv)) {
+      scenario_cols <- get("scenario_cols", envir = .GlobalEnv)
+    } else {
+      stop("scenario_cols is NULL and no global scenario_cols found.")
+    }
+  }
+  if (length(scenario_cols) == 0) {
+    stop("scenario_cols is empty. Define it before calling facet_hist_future().")
+  }
+  
+  missing_cols <- setdiff(scen_in_data, names(scenario_cols))
+  if (length(missing_cols) > 0) {
+    auto_cols <- scales::hue_pal()(length(missing_cols))
+    names(auto_cols) <- missing_cols
+    scenario_cols <- c(scenario_cols, auto_cols)
+  }
+  
+  ## -----------------------
+  ## Reference points (subset for selected species)
+  ## -----------------------
+  ref_points <- NULL
+  if (!is.null(ref_df)) {
+    ref_points <- ref_df %>%
+      mutate(species = as.character(species)) %>%
+      filter(species %in% species_set)
+    if (nrow(ref_points) == 0) ref_points <- NULL
+  }
+  
+  # -----------------------
+# Optional per-facet clipping
+# -----------------------
+if (!is.null(facet_limits)) {
+
+  facet_limits <- facet_limits %>%
+    mutate(species = as.character(species)) %>%
+    distinct(species, ymin, ymax)
+
+  # helper: clip a numeric vector to [ymin, ymax]
+  clip_vec <- function(x, ymin, ymax) pmin(pmax(x, ymin), ymax)
+
+  # 1) Clip ribbons (this is usually what drives Cod scaling)
+  if (clip_ribbons) {
+
+    hist_mc <- hist_mc %>%
+      left_join(facet_limits, by = "species") %>%
+      mutate(
+        q5  = clip_vec(q5,  ymin, ymax),
+        q95 = clip_vec(q95, ymin, ymax),
+        q50 = clip_vec(q50, ymin, ymax)
+      ) %>%
+      select(-ymin, -ymax)
+
+    future_mc <- future_mc %>%
+      left_join(facet_limits, by = "species") %>%
+      mutate(
+        q5  = clip_vec(q5,  ymin, ymax),
+        q95 = clip_vec(q95, ymin, ymax),
+        q50 = clip_vec(q50, ymin, ymax)
+      ) %>%
+      select(-ymin, -ymax)
+  }
+
+  # 2) Clip best-fit lines (optional)
+  # Use NA outside range so lines break rather than pin to borders.
+  if (clip_bestfit) {
+
+    hist_best <- hist_best %>%
+      left_join(facet_limits, by = "species") %>%
+      mutate(value = ifelse(value < ymin | value > ymax, NA_real_, value)) %>%
+      select(-ymin, -ymax)
+
+    future_best <- future_best %>%
+      left_join(facet_limits, by = "species") %>%
+      mutate(value = ifelse(value < ymin | value > ymax, NA_real_, value)) %>%
+      select(-ymin, -ymax)
+  }
+
+  # 3) Clip reference points (strongly recommended)
+  if (clip_points && !is.null(ref_points)) {
+
+    ref_points <- ref_points %>%
+      left_join(facet_limits, by = "species") %>%
+      mutate(value = ifelse(value < ymin | value > ymax, NA_real_, value)) %>%
+      select(-ymin, -ymax)
+  }
+}
+  ## -----------------------
+  ## Build plot
+  ## -----------------------
+  p <- ggplot() +
+    # historical MC ribbon (grey) per species
+    geom_ribbon(
+      data = hist_mc,
+      aes(x = year, ymin = q5, ymax = q95, group = species),
+      fill  = "grey70",
+      alpha = 0.5
+    ) +
+    # historical best-fit (black)
+    geom_line(
+      data = hist_best,
+      aes(x = year, y = value, group = species),
+      colour   = "black",
+      linewidth = 0.4
+    ) +
+    # future MC ribbons (scenario colours)
+    geom_ribbon(
+      data = future_mc,
+      aes(x = year, ymin = q5, ymax = q95,
+          fill = scenario,
+          group = interaction(scenario, species)),
+      alpha = 0.25
+    ) +
+    # future MC medians (scenario colours)
+    # geom_line(
+    #   data = future_mc,
+    #   aes(x = year, y = q50,
+    #       colour = scenario,
+    #       group = interaction(scenario, species)),
+    #   linewidth = 0.7
+    # ) +
+    scale_colour_manual(values = scenario_cols) +
+    scale_x_continuous(
+      limits = c(1991, 2100),
+      breaks = c(1991, 2025, 2050, 2100)
+      ) +
+    scale_fill_manual(values  = scenario_cols) +
+    labs(
+      x = "Year",
+      y = ylab #,
+      # title = "Historical and future scenarios for selected species",
+      # subtitle = paste0(
+      #   hist_start, "–", hist_end,
+      #   ": grey 95% (", hist_scenario, " MC) + black best-fit. ",
+      #   hist_end + 1, "+: coloured scenarios."
+      # )
+    ) +
+    theme_bw() +
+    theme(
+      strip.text = element_text(size = 8),
+      strip.background = element_rect(fill = "white", colour = "black"),
+      axis.text = element_text(size = 7),
+      axis.title = element_text(size = 9),
+      legend.position = "bottom"
+  )
+  
+  # add best-fit lines for future if wanted
+  if (show_bestfit_future) {
+    p <- p +
+      geom_line(
+        data = future_best,
+        aes(x = year, y = value,
+            colour = scenario,
+            group = interaction(scenario, species)),
+        # linetype = "dashed",
+        linewidth = 0.7
+      )
+  }
+  
+  # add reference points if available
+  if (!is.null(ref_points)) {
+    p <- p +
+      geom_point(
+        data = ref_points,
+        aes(x = year, y = value),
+        colour = "black",
+        size   = 0.2,
+        alpha  = 0.4
+      )
+  }
+  
+  # facet by species
+  p <- p +
+    facet_wrap(
+      ~ species,
+      scales = if (free_y) "free_y" else "fixed" #,
+      # ncol = 3
+    )
+  
+  return(p)
+}
+
+```
+
+Now remake plots with clipped y-scales
+```{r}
+# Define commercial subset
+commercial_species <- c(
+  "Cod (adult)",
+  "Whiting (adult)",
+  "Herring (adult)",
+  "Sprat",
+  "Mackerel",
+  "Plaice (adult)",
+  "Dab",
+  "Sole (adult)",
+  "Sea Bass"
+  # add/remove as needed
+)
+
+# BIOMASS
+# facet_limits <- tibble(
+#   species = commercial_species,
+#   ymin = c(0, 0.1, 0.15, 0.25, 0, 0, 2, 0.1, 0.004),
+#   ymax = c(0.1, 1, 1.55, 0.75, 1.55, 20, 15, 0.5, 0.047)
+# ) %>%
+#   mutate(species = as.character(species))
+
+facet_limits <- tibble(
+  species = commercial_species,
+  ymin = c(0, 0.1, 0.12, 0.25, 0, 0, 2, 0.1, 0.0),
+  ymax = c(0.22, 1, 0.85, 0.75, 1.5, 25, 15, 0.5, 0.045)
+) %>%
+  mutate(species = as.character(species))
+
+p_bc_3 <- facet_hist_future_clip(
+  mc_df       = mc_biomass,
+  bestfit_df  = bestfit_biomass,
+  species_set = commercial_species,
+  ref_df      = biomass_ref,
+  ylab        = "Biomass (t/km²)",
+  free_y      = TRUE,
+  facet_limits = facet_limits,
+  clip_ribbons = TRUE,
+  clip_points  = TRUE,
+  clip_bestfit = TRUE   # set TRUE only if lines still force scaling
+)
+
+p_bc_3
+# ggsave("Biomass_commercial_5.png", p_bc_3, width = 6, height = 4.5, dpi = 800)
+ggsave("Biomass_commercial_6.png", p_bc_3, width = 6, height = 4.5, dpi = 800)
+
+# facet_limits <- tibble(
+#   species = commercial_species,
+#   ymin = c(0, 0, 0, 0.15, 0, 0, 0.04, 0.01, 0.0),
+#   ymax = c(0.15, 0.33, 0.355, 1, 0.35, 1.5, 0.6, 0.14, 0.006)
+# ) %>%
+#   mutate(species = as.character(species))
+
+facet_limits <- tibble(
+  species = commercial_species,
+  ymin = c(0, 0, 0, 0.15, 0, 0, 0.04, 0.01, 0.0),
+  ymax = c(0.2, 0.33, 0.32, 1, 0.47, 1.51, 0.6, 0.125, 0.0055)
+) %>%
+  mutate(species = as.character(species))
+
+p_cc_3 <- facet_hist_future_clip(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_set = commercial_species,
+  ref_df      = catch_ref,    # reference catch points
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE,
+  facet_limits = facet_limits,
+  clip_ribbons = TRUE,
+  clip_points  = TRUE,
+  clip_bestfit = TRUE   # set TRUE only if lines still force scaling
+)
+
+p_cc_3
+# ggsave("Catch_commercial_5.png", p_cc_3, width = 6, height = 4.5, dpi = 800)
+ggsave("Catch_commercial_6.png", p_cc_3, width = 6, height = 4.5, dpi = 800)
+```
+
+
+Plotting ALL species facet grids:
+```{r}
+# Get all species that appear in the MC biomass data
+all_species <- mc_biomass %>%
+  dplyr::pull(species) %>%
+  unique() %>%
+  sort()
+
+## BIOMASS: all_species already defined
+n_bio  <- length(all_species)
+mid_bio <- ceiling(n_bio / 2)
+
+species_bio_1 <- all_species[1:mid_bio]
+species_bio_2 <- all_species[(mid_bio + 1):n_bio]
+
+# Biomass – all species
+p_bc_all <- facet_hist_future(
+  mc_df       = mc_biomass,
+  bestfit_df  = bestfit_biomass,
+  species_set = all_species,
+  ref_df      = biomass_ref,
+  ylab        = "Biomass (t/km²)",
+  free_y      = TRUE
+)
+
+# Catch – all species
+p_cc_all <- facet_hist_future(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_set = all_species,   # same set; assumes names match
+  ref_df      = catch_ref,
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE
+)
+
+# Get all species that appear in the MC biomass data
+species_no_c <- c("Blue mussels (reefs)", "Blue mussels (aquaculture)", "Carnivorous zooplankton", "Detritus",
+                  "Discards", "Gelatinous zooplankton", "Harbour porpoise", "Herbivorous plankton (copepods)", "Meiofauna", "Phytoplankton", "Seals", "Small infauna (polychaetes)", "Small mobile epifauna (swarming crustaceans)", "Temora longicornis")
+all_species_c <- mc_biomass %>%
+  dplyr::pull(species) %>%
+  unique() %>%
+  setdiff(species_no_c) %>% 
+  sort()
+
+## CATCH: all_species_c already defined
+n_catch  <- length(all_species_c)
+mid_catch <- ceiling(n_catch / 2)
+
+species_catch_1 <- all_species_c[1:mid_catch]
+species_catch_2 <- all_species_c[(mid_catch + 1):n_catch]
+
+# Catch – all caught species
+p_cc_all <- facet_hist_future(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_set = all_species_c,   # same set; assumes names match
+  ref_df      = catch_ref,
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE
+)
+
+# ggsave("Biomass_all.png", p_bc_all, width = 12, height = 18, dpi = 800)
+# ggsave("Catch_all.png",   p_cc_all, width = 12, height = 18, dpi = 800)
+
+# ggsave("Biomass_all_2.png", p_bc_all, width = 12, height = 18, dpi = 800)
+# ggsave("Catch_all_2.png",   p_cc_all, width = 12, height = 18, dpi = 800)
+
+ggsave("Biomass_all_3.png", p_bc_all, width = 12, height = 18, dpi = 800)
+ggsave("Catch_all_3.png",   p_cc_all, width = 12, height = 18, dpi = 800)
+
+# Split-up figures
+# Biomass – first half
+p_bc_1 <- facet_hist_future(
+  mc_df       = mc_biomass,
+  bestfit_df  = bestfit_biomass,
+  species_set = species_bio_1,
+  ref_df      = biomass_ref,
+  ylab        = "Biomass (t/km²)",
+  free_y      = TRUE
+  ) + 
+  facet_wrap(~ species, scales = "free_y", ncol = 3)
+
+# Biomass – second half
+p_bc_2 <- facet_hist_future(
+  mc_df       = mc_biomass,
+  bestfit_df  = bestfit_biomass,
+  species_set = species_bio_2,
+  ref_df      = biomass_ref,
+  ylab        = "Biomass (t/km²)",
+  free_y      = TRUE
+  ) + 
+  facet_wrap(~ species, scales = "free_y", ncol = 3)
+
+# Catch – first half
+p_cc_1 <- facet_hist_future(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_set = species_catch_1,
+  ref_df      = catch_ref,
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE
+  ) + 
+  facet_wrap(~ species, scales = "free_y", ncol = 3)
+
+# Catch – second half
+p_cc_2 <- facet_hist_future(
+  mc_df       = mc_catch,
+  bestfit_df  = bestfit_catch,
+  species_set = species_catch_2,
+  ref_df      = catch_ref,
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE
+  ) + 
+  facet_wrap(~ species, scales = "free_y", ncol = 3)
+
+p_bc_1
+p_bc_2
+p_cc_1
+p_cc_2
+
+# ggsave("Biomass_all_part1.png", p_bc_1, width = 9, height = 11, dpi = 800)
+# ggsave("Biomass_all_part2.png", p_bc_2, width = 9, height = 11, dpi = 800)
+# ggsave("Catch_all_part1.png", p_cc_1, width = 8, height = 9, dpi = 800)
+# ggsave("Catch_all_part2.png", p_cc_2, width = 8, height = 9, dpi = 800)
+
+# ggsave("Biomass_all_part1_2.png", p_bc_1, width = 9, height = 11, dpi = 800)
+# ggsave("Biomass_all_part2_2.png", p_bc_2, width = 9, height = 11, dpi = 800)
+# ggsave("Catch_all_part1_2.png", p_cc_1, width = 8, height = 9, dpi = 800)
+# ggsave("Catch_all_part2_2.png", p_cc_2, width = 8, height = 9, dpi = 800)
+
+ggsave("Biomass_all_part1_3.png", p_bc_1, width = 9, height = 11, dpi = 800)
+ggsave("Biomass_all_part2_3.png", p_bc_2, width = 9, height = 11, dpi = 800)
+ggsave("Catch_all_part1_3.png", p_cc_1, width = 8, height = 9, dpi = 800)
+ggsave("Catch_all_part2_3.png", p_cc_2, width = 8, height = 9, dpi = 800)
+```
+
+HISTORIC DATA PLOTS FOR FITTING
+```{r}
+# Now also make plots only for the fitted data:
+# BIOMASS
+# species that actually have biomass reference data
+species_with_bio_ref <- biomass_ref %>%
+  dplyr::distinct(species) %>%
+  dplyr::pull(species)
+
+# restrict to species that are both in the model and in the ref data
+species_hist_bio <- intersect(all_species, species_with_bio_ref)
+
+p_bc_hist <- facet_hist_future(
+  mc_df       = mc_biomass %>% dplyr::filter(year <= 2023,
+                                             scenario == "SSP1-2.6"),
+  bestfit_df  = bestfit_biomass %>% dplyr::filter(year <= 2023,
+                                                  scenario == "SSP1-2.6"),
+  species_set = species_hist_bio,
+  ref_df      = biomass_ref,
+  ylab        = "Biomass (t/km²)",
+  free_y      = TRUE
+)
+
+# CATCH
+species_with_catch_ref <- catch_ref %>%
+  dplyr::distinct(species) %>%
+  dplyr::pull(species)
+
+species_hist_catch <- intersect(all_species_c, species_with_catch_ref)
+
+p_cc_hist <- facet_hist_future(
+  mc_df       = mc_catch %>% dplyr::filter(year <= 2023,
+                                           scenario == "SSP1-2.6"),
+  bestfit_df  = bestfit_catch %>% dplyr::filter(year <= 2023,
+                                                scenario == "SSP1-2.6"),
+  species_set = species_hist_catch,
+  ref_df      = catch_ref,
+  ylab        = "Catch (t/km²/yr)",
+  free_y      = TRUE
+)
+
+species_labels <- c(
+  "Large crabs + shrimps "               = "Crabs and shrimps",
+  "Herbivorous plankton (copepods)"     = "Herbivorous plankton"
+  # add others as needed
+)
+
+p_bc_hist_f <- p_bc_hist +
+  facet_wrap(~ species, scales = "free_y", ncol = 4,
+             labeller = labeller(
+               species = function(x) {
+        # if name in species_labels, use the short one,
+        # otherwise keep original
+                 repl <- species_labels[x]
+                 ifelse(is.na(repl), x, repl)
+                 })) +  
+  scale_x_continuous(
+    limits = c(1991, 2023),
+    breaks = c(1991, 2000, 2010, 2020)
+  )
+p_cc_hist_f <- p_cc_hist + 
+  facet_wrap(~ species, scales = "free_y", ncol = 4,
+             labeller = labeller(
+               species = function(x) {
+        # if name in species_labels, use the short one,
+        # otherwise keep original
+                 repl <- species_labels[x]
+                 ifelse(is.na(repl), x, repl)
+                 })) +  
+  scale_x_continuous(
+    limits = c(1991, 2023),
+    breaks = c(1991, 2000, 2010, 2020)
+  )
+
+p_bc_hist_f
+p_cc_hist_f
+
+# ggsave("Biomass_Hist_fit.png", p_bc_hist_f, width = 6, height = 6, dpi = 800)
+# ggsave("Catch_Hist_fit.png", p_cc_hist_f, width = 6, height = 6, dpi = 800)
+
+# ggsave("Biomass_Hist_fit_2.png", p_bc_hist_f, width = 6, height = 6, dpi = 800)
+# ggsave("Catch_Hist_fit_2.png", p_cc_hist_f, width = 6, height = 6, dpi = 800)
+
+# ggsave("Biomass_Hist_fit_3.png", p_bc_hist_f, width = 6, height = 6, dpi = 800)
+# ggsave("Catch_Hist_fit_3.png", p_cc_hist_f, width = 6, height = 6, dpi = 800)
+
+ggsave("Biomass_Hist_fit_4.png", p_bc_hist_f, width = 6, height = 6, dpi = 800)
+ggsave("Catch_Hist_fit_4.png", p_cc_hist_f, width = 6, height = 6, dpi = 800)
+```
+
+Overview table/figure of MID century and END OF CENTURY changes in Biomass and catches for the commercially important species
+```{r}
+# Define commercial subset
+commercial_species <- c(
+  "Cod (adult)",
+  "Whiting (adult)",
+  "Herring (adult)",
+  "Sprat",
+  "Mackerel",
+  "Plaice (adult)",
+  "Dab",
+  "Sole (adult)",
+  "Sea Bass"
+  # add/remove as needed
+)
+
+# scenarios order (consistent with scenario_cols)
+scenarios <- c("SSP1-2.6", "SSP2-4.5", "SSP3-7.0")
+
+baseline_year      <- 2025
+baseline_scenario  <- "SSP1-2.6"   # can change if you want
+periods_list <- list(
+  "2050s" = 2050:2059,
+  "2090s" = 2090:2099
+)
+```
+
+Helper functions to build summary table
+```{r}
+# Parameters for the table
+baseline_year     <- 2025                # change if needed
+baseline_scenario <- "SSP1-2.6"
+periods_list <- list(
+  "2050s" = 2050:2059,
+  "2090s" = 2090:2099
+)
+scenarios <- c("SSP1-2.6", "SSP2-4.5", "SSP3-7.0")
+
+
+make_change_table <- function(bestfit_df,
+                              species_set,
+                              baseline_year,
+                              baseline_scenario,
+                              periods_list,
+                              scenarios,
+                              rel_type = c("percent", "ratio")) {
+  rel_type <- match.arg(rel_type)
+  
+  df <- bestfit_df %>%
+    filter(species %in% species_set)
+  
+  ## ---- 1. Baseline ("Current") absolute value ----
+  current_df <- df %>%
+    filter(
+      scenario == baseline_scenario,
+      year == baseline_year
+    ) %>%
+    group_by(species) %>%
+    summarise(
+      current_abs = mean(value, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  ## ---- 2. Period means per (species, scenario, period) ----
+  period_df <- purrr::imap_dfr(
+    periods_list,
+    ~ df %>%
+      filter(
+        scenario %in% scenarios,
+        year %in% .x
+      ) %>%
+      group_by(species, scenario) %>%
+      summarise(
+        period_mean = mean(value, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      mutate(period = .y)   # .y is the name: "2050s", "2090s"
+  )
+  
+  ## ---- 3. Join baseline, compute relative change ----
+  period_df <- period_df %>%
+    left_join(current_df, by = "species") %>%
+    mutate(
+      rel_change = case_when(
+        rel_type == "percent" ~ (period_mean - current_abs) / current_abs * 100,
+        rel_type == "ratio"   ~ period_mean / current_abs
+      )
+    )
+  
+  ## ---- 4. Build long table with a "block" column ----
+  # Current block: one column
+  current_long <- current_df %>%
+    transmute(
+      species,
+      block      = "Current",
+      scenario   = "Current",
+      abs_value  = current_abs,
+      rel_change = 0          # so all Current cells are neutral colour
+    )
+  
+  # Future blocks: 2050s / 2090s with scenarios as subcolumns
+  future_long <- period_df %>%
+    transmute(
+      species,
+      block      = period,    # "2050s" or "2090s"
+      scenario,
+      abs_value  = period_mean,
+      rel_change
+    )
+  
+  change_long <- bind_rows(current_long, future_long) %>%
+    mutate(
+      block    = factor(block, levels = c("Current", "2050s", "2090s")),
+      species  = factor(species, levels = sort(unique(species))),
+      scenario = factor(
+        scenario,
+        levels = c("Current", scenarios),
+        labels = c("Current", scenarios)
+      )
+    )
+  
+  # Labels to print in the cells:
+  # - Current: absolute value
+  # - Others: relative change (%)
+  change_long <- change_long %>%
+    mutate(
+      label = dplyr::case_when(
+        block == "Current" ~ sprintf("%.3f", abs_value),
+        rel_type == "percent" ~ sprintf("%+.0f%%", rel_change),
+        rel_type == "ratio"   ~ sprintf("%.2f", rel_change)
+      ),
+      # value driving the colour
+      fill_val = dplyr::if_else(block == "Current", 0, rel_change)
+    )
+  
+  # order species from top to bottom
+  change_long$species <- factor(change_long$species,
+                                levels = rev(levels(change_long$species)))
+  
+  change_long
+}
+
+```
+
+```{r}
+biomass_change_long <- make_change_table(
+  bestfit_df        = bestfit_biomass,
+  species_set       = commercial_species,
+  baseline_year     = baseline_year,
+  baseline_scenario = baseline_scenario,
+  periods_list      = periods_list,
+  scenarios         = scenarios,
+  rel_type          = "percent"   # or "ratio"
+)
+
+catch_change_long <- make_change_table(
+  bestfit_df        = bestfit_catch,
+  species_set       = commercial_species,
+  baseline_year     = baseline_year,
+  baseline_scenario = baseline_scenario,
+  periods_list      = periods_list,
+  scenarios         = scenarios,
+  rel_type          = "percent"
+)
+
+```
+
+```{r}
+# plot_change_table <- function(change_long,
+#                               title       = "",
+#                               fill_limits = c(-100, 100)) {
+#   
+#   ggplot(change_long,
+#          aes(x = scenario, y = species)) +
+#     facet_grid(. ~ block,
+#                space  = "free_x",
+#                scales = "free_x") +
+#     geom_tile(aes(fill = fill_val),
+#               colour = "white", linewidth = 0.3) +
+#     geom_text(aes(label = label),
+#               size = 3) +
+#     scale_fill_gradient2(
+#       name     = "Change",
+#       low      = "#b2182b",   # red
+#       mid      = "grey95",    # near zero
+#       high     = "#2166ac",   # blue
+#       midpoint = 0,
+#       limits   = fill_limits,
+#       oob      = scales::squish
+#     ) +
+#     labs(
+#       x = NULL,
+#       y = NULL,
+#       title = title
+#     ) +
+#     theme_bw() +
+#     theme(
+#       strip.background   = element_rect(fill = "white"),
+#       strip.text         = element_text(face = "bold", size = 10),
+#       axis.text.x        = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+#       axis.text.y        = element_text(size = 8),
+#       legend.position    = "right",
+#       panel.grid         = element_blank(),
+#       panel.border       = element_rect(colour = "grey60", linewidth = 0.4)
+#     )
+# }
+
+```
+
+```{r}
+# P_biomass_change <- plot_change_table(
+#   biomass_change_long,
+#   title       = "Commercial species – biomass",
+#   fill_limits = c(-100, 100)   # % change; adjust if your values are larger
+# )
+# 
+# P_catch_change <- plot_change_table(
+#   catch_change_long,
+#   title       = "Commercial species – catch",
+#   fill_limits = c(-100, 100)
+# )
+# 
+# P_biomass_change
+# P_catch_change
+
+```
+
+```{r}
+plot_change_table <- function(change_long,
+                              title       = "",
+                              fill_limits = c(-100, 100)) {
+  
+  # how many species rows (for vertical positioning of labels)
+  species_levels <- levels(change_long$species)
+  n_species      <- length(species_levels)
+  
+  # data for scenario labels INSIDE the facets (only for 2050s/2090s)
+  scenario_label_df <- change_long %>%
+    dplyr::distinct(block, scenario) %>%
+    dplyr::filter(block != "Current") %>%         # no label for Current block
+    dplyr::mutate(
+      y     = n_species + 0.6,                    # just above top row
+      label = as.character(scenario)
+    )
+  
+  ggplot(change_long,
+         aes(x = scenario, y = species)) +
+    facet_grid(. ~ block,
+               space  = "free_x",
+               scales = "free_x") +
+    
+    # coloured cells
+    geom_tile(aes(fill = fill_val),
+              colour = "white", linewidth = 0.3) +
+    
+    # numbers inside the cells
+    geom_text(aes(label = label),
+              size = 3) +
+    
+    # scenario labels above the cells, inside 2050s / 2090s panels
+    geom_text(
+      data = scenario_label_df,
+      aes(x = scenario, y = y, label = label),
+      inherit.aes = FALSE,
+      size  = 3,
+      vjust = 0
+    ) +
+    
+    scale_fill_gradient2(
+      name     = "Change",
+      low      = "#b2182b",   # red
+      mid      = "grey95",    # near zero
+      high     = "#2166ac",   # blue
+      midpoint = 0,
+      limits   = fill_limits,
+      oob      = scales::squish
+    ) +
+    labs(
+      x = NULL,
+      y = NULL,
+      title = title
+    ) +
+    theme_bw() +
+    theme(
+      strip.background   = element_rect(fill = "white"),
+      strip.text         = element_text(face = "bold", size = 10),  # "Current", "2050s", "2090s"
+      axis.text.x        = element_blank(),                         # remove bottom scenario labels
+      axis.ticks.x       = element_blank(),
+      axis.text.y        = element_text(size = 8, colour = "black"),
+      legend.position    = "right",
+      panel.grid         = element_blank(),
+      panel.border       = element_rect(colour = "grey60", linewidth = 0.4),
+      # allow room above for scenario labels
+      plot.margin        = margin(t = 12, r = 5.5, b = 5.5, l = 5.5)
+    ) +
+    # extend y-range a bit upward so the top labels are visible
+    coord_cartesian(ylim = c(0.5, n_species + 1.2), clip = "off")
+}
+
+```
+
+```{r}
+# P_biomass_change <- plot_change_table(
+#   biomass_change_long,
+#   title       = "Commercial species – biomass",
+#   fill_limits = c(-100, 100)
+# )
+# 
+# P_catch_change <- plot_change_table(
+#   catch_change_long,
+#   title       = "Commercial species – catch",
+#   fill_limits = c(-100, 100)
+# )
+# 
+# P_biomass_change
+# P_catch_change
+```
+
+```{r}
+make_combined_change_table <- function(biomass_change_long,
+                                       bestfit_biomass,
+                                       bestfit_catch,
+                                       species_set,
+                                       baseline_year,
+                                       baseline_scenario,
+                                       periods_list,
+                                       scenarios) {
+  # ---- 1. CURRENT absolute values: biomass & catch ----
+  bio_current <- bestfit_biomass %>%
+    filter(
+      species  %in% species_set,
+      scenario == baseline_scenario,
+      year     == baseline_year
+    ) %>%
+    group_by(species) %>%
+    summarise(
+      Biomass = mean(value, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  catch_current <- bestfit_catch %>%
+    filter(
+      species  %in% species_set,
+      scenario == baseline_scenario,
+      year     == baseline_year
+    ) %>%
+    group_by(species) %>%
+    summarise(
+      Catch = mean(value, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  current_wide <- bio_current %>%
+    left_join(catch_current, by = "species")
+  
+  # long: two cols under "Current": Biomass + Catch
+  current_long <- current_wide %>%
+    tidyr::pivot_longer(
+      cols      = c(Biomass, Catch),
+      names_to  = "scenario",
+      values_to = "abs_value"
+    ) %>%
+    mutate(
+      block      = "Current",
+      rel_change = 0,
+      label      = sprintf("%.3f", abs_value),
+      fill_val   = 0
+    ) %>%
+    select(species, block, scenario, abs_value, rel_change, label, fill_val)
+  
+  # ---- 2. FUTURE blocks (2050s & 2090s) from biomass_change_long ----
+  future_long <- biomass_change_long %>%
+    filter(block != "Current") %>%  # keep only 2050s / 2090s
+    select(species, block, scenario, abs_value, rel_change, label, fill_val)
+  
+  # ---- 3. Combine, set factor orders ----
+  combined <- bind_rows(current_long, future_long) %>%
+    mutate(
+      block = factor(block, levels = c("Current", "2050s", "2090s")),
+      # species order (top–bottom as before)
+      species = factor(species, levels = rev(sort(unique(species)))),
+      # x-columns: Biomass, Catch, then scenarios
+      scenario = factor(
+        scenario,
+        levels = c("Biomass", "Catch", scenarios)
+      )
+    )
+  
+  combined
+}
+
+```
+
+```{r}
+combined_change_long <- make_combined_change_table(
+  biomass_change_long = biomass_change_long,
+  bestfit_biomass     = bestfit_biomass,
+  bestfit_catch       = bestfit_catch,
+  species_set         = commercial_species,
+  baseline_year       = baseline_year,
+  baseline_scenario   = baseline_scenario,
+  periods_list        = periods_list,
+  scenarios           = scenarios
+)
+
+```
+
+```{r}
+plot_change_table_combined <- function(change_long,
+                                       title       = "",
+                                       fill_limits = c(-100, 100)) {
+  # Keep original object but work on a local copy
+  df <- change_long
+
+  ## ---- add a "header row" level for species ---------------------------
+  # Existing species order (already reversed in make_* functions)
+  species_levels <- levels(df$species)
+
+  # Add an extra top row called "header" with blank axis label
+  extended_levels <- c(species_levels, "header")
+  extended_labels <- c(species_levels, "")   # blank label for header row
+
+  df$species <- factor(df$species,
+                       levels = extended_levels,
+                       labels = extended_labels)
+
+  # Data frame with sub-column labels per block (Biomass / Catch / SSPs)
+  header_df <- df %>%
+    dplyr::distinct(block, scenario) %>%
+    dplyr::mutate(
+      species = factor("header",
+                       levels = extended_levels,
+                       labels = extended_labels),
+      label = as.character(scenario)  # what we actually print
+    )
+
+  ## ---- plot -----------------------------------------------------------
+  ggplot(df, aes(x = scenario, y = species)) +
+    facet_grid(
+      . ~ block,
+      space  = "free_x",
+      scales = "free_x"
+    ) +
+    # coloured cells for all "real" rows
+    geom_tile(
+      aes(fill = fill_val),
+      colour   = "white",
+      linewidth = 0.3,
+      # width = 0.9,
+      # height = 0.9
+    ) +
+    # numbers inside the cells (only for non-header rows; header row has NA fill_val)
+    geom_text(
+      data = dplyr::filter(df, species != ""),
+      aes(label = label),
+      size = 3
+    ) +
+    # header labels inside the panels, in the extra top row
+    geom_text(
+      data = header_df,
+      aes(x = scenario, y = species, label = label),
+      fontface = "bold",
+      size     = 3,
+      vjust    = 0.5
+    ) +
+    scale_fill_gradient2(
+      name     = "Change",
+      low      = "#d55e00",   # negative (red)
+      mid      = "grey95",    # ~0
+      high     = "#0072b2",   # positive (blue)
+      midpoint = 0,
+      limits   = fill_limits,
+      oob      = scales::squish
+    ) +
+    # axis labels are now *inside* the panel, so hide normal x-axis text
+    scale_x_discrete(expand = expansion(add = 0)) +
+    labs(
+      x     = NULL,
+      y     = NULL,
+      title = title,
+      labels = function(x) {
+    colored <- c(
+      "Biomass"  = "Biomass",
+      "Catch"    = "Catch",
+      "SSP1-2.6" = "<span style='color:#56B4E9;'>SSP1-2.6</span>",
+      "SSP2-4.5" = "<span style='color:#E69F00;'>SSP2-4.5</span>",
+      "SSP3-7.0" = "<span style='color:#CC79A7;'>SSP3-7.0</span>"
+    )
+    unname(colored[x])
+  }
+    ) +
+    theme_bw() +
+    theme(
+      strip.background    = element_rect(fill = "white"),
+      strip.text          = element_text(face = "bold"),
+      axis.text.x.top     = element_blank(),
+      axis.text.x.bottom  = element_blank(),
+      axis.ticks.x        = element_blank(),
+      axis.text.y         = element_text(colour = "black"),
+      axis.ticks.y = element_blank(),        # remove the small tick marks
+      legend.position     = "none",
+      panel.grid          = element_blank(),
+      panel.border        = element_rect(colour = "gray50", linewidth = 0.4)#,
+      # panel.spacing.x = unit(0.1, "cm"),   # horizontal space between panels
+      # panel.spacing.y = unit(0.1, "cm")    # vertical spacing (optional)
+    )
+}
+
+
+```
+
+```{r}
+combined_change_long <- make_combined_change_table(
+  biomass_change_long = biomass_change_long,
+  bestfit_biomass     = bestfit_biomass,
+  bestfit_catch       = bestfit_catch,
+  species_set         = commercial_species,
+  baseline_year       = baseline_year,
+  baseline_scenario   = baseline_scenario,
+  periods_list        = periods_list,
+  scenarios           = scenarios
+)
+
+P_change_combined <- plot_change_table_combined(
+  combined_change_long,
+  title       = "Commercial species – biomass & catch",
+  fill_limits = c(-100, 100)
+)
+
+P_change_combined
+
+# ggsave("Scenario_changes_50-90.png", P_change_combined, 
+#        width = 6, height = 4.5, dpi = 800)
+
+# ggsave("Scenario_changes_50-90_2.png", P_change_combined, 
+#        width = 6, height = 4.5, dpi = 800)
+
+ggsave("Scenario_changes_50-90_3.png", P_change_combined, 
+       width = 6, height = 4.5, dpi = 800)
+```
+
+Make table that shows the percentage of Monte Carlo runs that showed an increase and percentage of runs that showed a decrease. This for two periods (2024 versus 2050, and 2050 versus 2099). Goed voor een extra validatie van de modelresultaten: hoe robust zijn onze uitkomsten met variërende inputs?
+
+In de paper kan ik dan terug refereren naar Lorré et al., 2025 om aan te tonene dat het belangrijk is om niet het gemiddelde of de best fit blindelinks te  vertrouwen, maar dat het belangrijk is om rekening te houden met onzekerheid en in het beste geval zelf de volledige verdeling van de uitkomsten in rekening te brengen.
+
+
+Helper function to make directions table
+```{r}
+make_mc_direction_table_mcdata <- function(mc_df,
+                                          species_set,
+                                          scenarios = c("SSP1-2.6","SSP2-4.5","SSP3-7.0"),
+                                          run_col = "trial",
+                                          periods = list("2024"=2024, "2050s"=2050:2059, "2090s"=2090:2099),
+                                          comparisons = list("2024→2050s"=c("2024","2050s"),
+                                                             "2050s→2090s"=c("2050s","2090s")),
+                                          tie_handling = c("exclude","count_as_neither")) {
+
+  tie_handling <- match.arg(tie_handling)
+  run_sym <- rlang::sym(run_col)
+
+  df <- mc_df %>%
+    filter(species %in% species_set,
+           scenario %in% scenarios,
+           year %in% unique(unlist(periods))) %>%
+    mutate(period = case_when(
+      year %in% periods[["2024"]]  ~ "2024",
+      year %in% periods[["2050s"]] ~ "2050s",
+      year %in% periods[["2090s"]] ~ "2090s",
+      TRUE ~ NA_character_
+    )) %>%
+    filter(!is.na(period))
+
+  period_means <- df %>%
+    group_by(species, scenario, !!run_sym, period) %>%
+    summarise(period_mean = mean(value, na.rm = TRUE), .groups = "drop")
+
+  comp_long <- purrr::imap_dfr(comparisons, function(pp, comp_name) {
+    p_from <- pp[1]; p_to <- pp[2]
+
+    wide <- period_means %>%
+      filter(period %in% c(p_from, p_to)) %>%
+      pivot_wider(names_from = period, values_from = period_mean)
+
+    wide %>%
+      mutate(
+        delta = .data[[p_to]] - .data[[p_from]],
+        direction = case_when(
+          is.na(delta) ~ NA_character_,
+          delta > 0    ~ "Increase",
+          delta < 0    ~ "Decrease",
+          TRUE         ~ "No change"
+        ),
+        comparison = comp_name
+      ) %>%
+      select(species, scenario, !!run_sym, comparison, direction)
+  })
+
+  comp_long %>%
+    filter(!is.na(direction)) %>%
+    { if (tie_handling == "exclude") filter(., direction != "No change") else . } %>%
+    group_by(species, scenario, comparison) %>%
+    summarise(
+      n_runs = n(),
+      pct_decrease = mean(direction == "Decrease") * 100,
+      pct_increase = mean(direction == "Increase") * 100,
+      .groups = "drop"
+    ) %>%
+    mutate(
+      pct_decrease = round(pct_decrease, 1),
+      pct_increase = round(pct_increase, 1)
+    )
+}
+
+```
+
+```{r}
+dir_biomass <- make_mc_direction_table_mcdata(
+  mc_df       = mc_biomass,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial"
+)
+
+dir_catch <- make_mc_direction_table_mcdata(
+  mc_df       = mc_catch,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial"
+)
+
+dir_biomass_wide <- dir_biomass %>%
+  mutate(cell = sprintf("↓ %.1f%% | ↑ %.1f%%", pct_decrease, pct_increase)) %>%
+  select(species, scenario, comparison, cell) %>%
+  pivot_wider(names_from = c(comparison, scenario), values_from = cell)
+
+dir_biomass_wide
+```
+
+Test to add average change: accos runs
+```{r}
+make_mc_direction_meanchange_table <- function(mc_df,
+                                              species_set,
+                                              scenarios = c("SSP1-2.6","SSP2-4.5","SSP3-7.0"),
+                                              run_col = "trial",
+                                              periods = list("2024"=2024, "2050s"=2050:2059, "2090s"=2090:2099),
+                                              comparisons = list("2024→2050s"=c("2024","2050s"),
+                                                                 "2050s→2090s"=c("2050s","2090s")),
+                                              tie_handling = c("exclude","count_as_neither")) {
+
+  tie_handling <- match.arg(tie_handling)
+  run_sym <- rlang::sym(run_col)
+
+  df <- mc_df %>%
+    filter(species %in% species_set,
+           scenario %in% scenarios,
+           year %in% unique(unlist(periods))) %>%
+    mutate(period = case_when(
+      year %in% periods[["2024"]]  ~ "2024",
+      year %in% periods[["2050s"]] ~ "2050s",
+      year %in% periods[["2090s"]] ~ "2090s",
+      TRUE ~ NA_character_
+    )) %>%
+    filter(!is.na(period))
+
+  # mean per period per run
+  period_means <- df %>%
+    group_by(species, scenario, !!run_sym, period) %>%
+    summarise(period_mean = mean(value, na.rm = TRUE), .groups = "drop")
+
+  # per-run percent changes for each comparison
+  run_changes <- purrr::imap_dfr(comparisons, function(pp, comp_name) {
+    p_from <- pp[1]; p_to <- pp[2]
+
+    wide <- period_means %>%
+      filter(period %in% c(p_from, p_to)) %>%
+      pivot_wider(names_from = period, values_from = period_mean)
+
+    wide %>%
+      mutate(
+        delta_pct = 100 * (.data[[p_to]] - .data[[p_from]]) / .data[[p_from]],
+        direction = case_when(
+          is.na(delta_pct) ~ NA_character_,
+          delta_pct > 0    ~ "Increase",
+          delta_pct < 0    ~ "Decrease",
+          TRUE             ~ "No change"
+        ),
+        comparison = comp_name
+      ) %>%
+      select(species, scenario, !!run_sym, comparison, direction, delta_pct)
+  })
+
+  # summary table
+  out <- run_changes %>%
+    filter(!is.na(direction)) %>%
+    { if (tie_handling == "exclude") filter(., direction != "No change") else . } %>%
+    group_by(species, scenario, comparison) %>%
+    summarise(
+      n_runs = n(),
+      pct_decrease = mean(direction == "Decrease") * 100,
+      pct_increase = mean(direction == "Increase") * 100,
+      mean_pct_change_all = mean(delta_pct, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      pct_decrease = round(pct_decrease, 1),
+      pct_increase = round(pct_increase, 1),
+      mean_pct_change_all = round(mean_pct_change_all, 1)
+    )
+
+  out
+}
+```
+
+```{r}
+dir_biomass <- make_mc_direction_meanchange_table(
+  mc_df       = mc_biomass,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial"
+)
+
+dir_biomass_wide <- dir_biomass %>%
+  mutate(cell = sprintf("↓ %.1f%% | ↑ %.1f%% | mean %.1f%%",
+                        pct_decrease, pct_increase, mean_pct_change_all)) %>%
+  select(species, scenario, comparison, cell) %>%
+  pivot_wider(names_from = c(comparison, scenario), values_from = cell)
+
+dir_biomass_wide
+
+write.csv(
+  dir_biomass_wide,
+  file = "dir_biomass_MC_direction_meanchange.csv",
+  row.names = FALSE
+)
+```
+
+```{r}
+dir_catch <- make_mc_direction_meanchange_table(
+  mc_df       = mc_catch,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial"
+)
+
+dir_catch_wide <- dir_catch %>%
+  mutate(cell = sprintf("↓ %.1f%% | ↑ %.1f%% | mean %.1f%%",
+                        pct_decrease, pct_increase, mean_pct_change_all)) %>%
+  select(species, scenario, comparison, cell) %>%
+  pivot_wider(names_from = c(comparison, scenario), values_from = cell)
+
+dir_catch_wide
+```
+
+Make figure instead?
+```{r}
+plot_mc_change_table <- function(dir_long,
+                                 title = "",
+                                 fill_limits = c(-50, 50)) {
+
+  plot_df <- dir_long %>%
+    mutate(
+      species = factor(species, levels = rev(sort(unique(species)))),
+      scenario = factor(scenario,
+                        levels = c("SSP1-2.6", "SSP2-4.5", "SSP3-7.0")),
+      label = sprintf("↓ %.0f%% | ↑ %.0f%%",
+                      pct_decrease, pct_increase),
+      fill_val = mean_pct_change_all
+    )
+
+  ggplot(plot_df, aes(x = scenario, y = species)) +
+    facet_grid(. ~ comparison) +
+    geom_tile(aes(fill = fill_val),
+              colour = "white",
+              linewidth = 0.3) +
+    geom_text(aes(label = label),
+              size = 3) +
+    scale_fill_gradient2(
+      name     = "Mean % change\n(across MC runs)",
+      low      = "#d55e00",
+      mid      = "grey95",
+      high     = "#0072b2",
+      midpoint = 0,
+      limits   = fill_limits,
+      oob      = scales::squish
+    ) +
+    labs(
+      x = NULL,
+      y = NULL,
+      title = title
+    ) +
+    theme_bw() +
+    theme(
+      strip.background = element_rect(fill = "white"),
+      strip.text       = element_text(face = "bold"),
+      axis.text.x      = element_text(angle = 45, hjust = 1),
+      panel.grid       = element_blank(),
+      panel.border     = element_rect(colour = "grey50", linewidth = 0.4)
+    )
+}
+
+```
+
+```{r}
+P_mc_biomass <- plot_mc_change_table(
+  dir_long   = dir_biomass,
+  # title      = "Commercial species – biomass (Monte Carlo summary)",
+  fill_limits = c(-100, 100)
+)
+
+P_mc_biomass
+```
+
+```{r}
+make_mc_change_long <- function(dir_long) {
+
+  df <- dir_long %>%
+    mutate(
+      block    = comparison,
+      fill_val = mean_pct_change_all,
+      label    = sprintf("%+.0f%%\n↓ %.0f%% | ↑ %.0f%%",
+                         mean_pct_change_all, pct_decrease, pct_increase)
+    ) %>%
+    select(species, block, scenario, fill_val, label)
+
+  df <- df %>%
+    mutate(
+      block = factor(block, levels = c("2024→2050s", "2050s→2090s")),
+      species = factor(species, levels = rev(sort(unique(species)))),
+      scenario = factor(scenario, levels = c("SSP1-2.6", "SSP2-4.5", "SSP3-7.0"))
+    )
+
+  df
+}
+
+
+```
+
+```{r}
+plot_mc_change_table <- function(change_long,
+                                 title       = "",
+                                 fill_limits = c(-100, 100)) {
+
+  df <- change_long
+
+  ## ---- header row trick (identical to your best-fit plot) ----
+  species_levels <- levels(df$species)
+
+  extended_levels <- c(species_levels, "header")
+  extended_labels <- c(species_levels, "")
+
+  df$species <- factor(df$species,
+                       levels = extended_levels,
+                       labels = extended_labels)
+
+  header_df <- df %>%
+    distinct(block, scenario) %>%
+    mutate(
+      species = factor("header",
+                       levels = extended_levels,
+                       labels = extended_labels),
+      label = as.character(scenario)
+    )
+
+  ## ---- plot ----
+  ggplot(df, aes(x = scenario, y = species)) +
+    facet_grid(
+      . ~ block,
+      space  = "free_x",
+      scales = "free_x"
+    ) +
+    geom_tile(
+      aes(fill = fill_val),
+      colour   = "white",
+      linewidth = 0.3
+    ) +
+    geom_text(
+      data = dplyr::filter(df, species != ""),
+      aes(label = label),
+      size = 3
+    ) +
+    geom_text(
+      data = header_df,
+      aes(label = label),
+      fontface = "bold",
+      size = 3,
+      vjust = 0.5
+    ) +
+    scale_fill_gradient2(
+      low      = "#d55e00",
+      mid      = "grey95",
+      high     = "#0072b2",
+      midpoint = 0,
+      limits   = fill_limits,
+      oob      = scales::squish
+    ) +
+    scale_x_discrete(expand = expansion(add = 0)) +
+    labs(
+      x = NULL,
+      y = NULL,
+      title = title
+    ) +
+    theme_bw() +
+    theme(
+      strip.background   = element_rect(fill = "white"),
+      strip.text         = element_text(face = "bold"),
+      axis.text.x        = element_blank(),
+      axis.ticks.x       = element_blank(),
+      axis.text.y        = element_text(colour = "black"),
+      axis.ticks.y       = element_blank(),
+      legend.position    = "none",
+      panel.grid         = element_blank(),
+      panel.border       = element_rect(colour = "gray50", linewidth = 0.4)
+    )
+}
+
+```
+
+```{r}
+mc_biomass_change_long <- make_mc_change_long(dir_biomass)
+P_mc_biomass <- plot_mc_change_table(
+  mc_biomass_change_long,
+  # title       = "Commercial species – biomass (Monte Carlo summary)",
+  fill_limits = c(-100, 100)
+)
+P_mc_biomass
+
+# ggsave("Scenario_changes_50-90_MC_1.png", P_mc_biomass, 
+#        width = 7, height = 5, dpi = 800)
+
+ggsave("Scenario_changes_50-90_MC_2.png", P_mc_biomass, 
+       width = 7, height = 5, dpi = 800)
+```
+
+```{r}
+comparisons3 <- list(
+  "2024→2050s"  = c("2024", "2050s"),
+  "2050s→2090s" = c("2050s", "2090s"),
+  "2024→2090s"  = c("2024", "2090s")
+)
+
+dir_biomass <- make_mc_direction_meanchange_table(
+  mc_df       = mc_biomass,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial",
+  comparisons = comparisons3
+)
+
+dir_catch <- make_mc_direction_meanchange_table(
+  mc_df       = mc_catch,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial",
+  comparisons = comparisons3
+)
+
+```
+
+```{r}
+make_mc_change_long_2 <- function(dir_long) {
+
+  df <- dir_long %>%
+    mutate(
+      block    = comparison,
+      fill_val = mean_pct_change_all,
+      label    = sprintf("%+.0f%%\n↓ %.0f%% | ↑ %.0f%%",
+                         mean_pct_change_all, pct_decrease, pct_increase)
+    ) %>%
+    select(species, block, scenario, fill_val, label)
+
+  df <- df %>%
+    mutate(
+      block = factor(block, levels = c("2024→2050s", "2050s→2090s", "2024→2090s")),
+      species = factor(species, levels = rev(sort(unique(species)))),
+      scenario = factor(scenario, levels = c("SSP1-2.6", "SSP2-4.5", "SSP3-7.0"))
+    )
+
+  df
+}
+
+```
+
+```{r}
+mc_biomass_change_long <- make_mc_change_long_2(dir_biomass)
+
+P_mc_biomass_2 <- plot_mc_change_table(
+  mc_biomass_change_long,
+  # title       = "Commercial species – biomass (Monte Carlo summary)",
+  fill_limits = c(-100, 100)
+)
+P_mc_biomass_2
+
+# ggsave("Scenario_changes_50-90_MC_2.png", P_mc_biomass_2, 
+#        width = 7, height = 5, dpi = 800)
+
+ggsave("Scenario_changes_50-90_MC_3.png", P_mc_biomass_2, 
+       width = 7, height = 5, dpi = 800)
+```
+
+CDF plots:
+```{r}
+detect_species_col <- function(df, candidates = c("species", "Species", "sp", "name", "group_name", "Group")) {
+  hit <- candidates[candidates %in% names(df)][1]
+  if (is.na(hit)) {
+    stop("Could not detect the species-name column. Columns are:\n  ",
+         paste(names(df), collapse = ", "),
+         "\nAdd your species column name to `candidates=` or set species_col explicitly.")
+  }
+  hit
+}
+
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(rlang)
+
+make_per_trial_pct_change <- function(mc_df,
+                                      species_set,
+                                      scenarios = c("SSP1-2.6","SSP2-4.5","SSP3-7.0"),
+                                      trial_col = "trial",
+                                      species_col = NULL,
+                                      from_year = 2024,
+                                      to_years  = 2090:2099) {
+
+  if (is.null(species_col)) species_col <- detect_species_col(mc_df)
+
+  sp_sym    <- sym(species_col)
+  trial_sym <- sym(trial_col)
+
+  # Keep only relevant years/species/scenarios
+  df <- mc_df %>%
+    filter(
+      !!sp_sym %in% species_set,
+      scenario %in% scenarios,
+      year %in% c(from_year, to_years)
+    ) %>%
+    mutate(period = if_else(year == from_year, "from", "to"))
+
+  # Mean per period per trial
+  per_period <- df %>%
+    group_by(!!sp_sym, scenario, !!trial_sym, period) %>%
+    summarise(period_mean = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    pivot_wider(names_from = period, values_from = period_mean)
+
+  # Per-trial % change
+  per_period %>%
+    mutate(pct_change = 100 * (to - from) / from) %>%
+    transmute(
+      species = as.character(!!sp_sym),
+      scenario,
+      !!trial_sym,
+      pct_change
+    )
+}
+
+```
+
+```{r}
+pertrial_2090s_biomass <- make_per_trial_pct_change(
+  mc_df       = mc_biomass,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  trial_col   = "trial",
+  from_year   = 2024,
+  to_years    = 2090:2099
+)
+```
+
+```{r}
+plot_ecdf_per_species <- function(pertrial_df,
+                                  title = "") {
+
+  df <- pertrial_df %>%
+    dplyr::filter(is.finite(pct_change)) %>%
+    dplyr::mutate(
+      species  = factor(species, levels = sort(unique(species))),
+      scenario = factor(
+        scenario,
+        levels = c("SSP1-2.6", "SSP2-4.5", "SSP3-7.0")
+      )
+    )
+
+  ggplot(df, aes(x = pct_change, colour = scenario)) +
+    stat_ecdf(linewidth = 0.8) +
+    facet_wrap(~ species, scales = "free_x") +
+    geom_vline(
+      xintercept = 0,
+      linewidth  = 0.3,
+      colour     = "grey50"
+    ) +
+    scale_colour_manual(
+      values = c(
+        "SSP1-2.6" = "#56B4E9",
+        "SSP2-4.5" = "#E69F00",
+        "SSP3-7.0" = "#CC79A7"
+      )
+    ) +
+    labs(
+      x     = "% change per MC run",
+      y     = "Empirical cumulative distribution",
+      title = title,
+      colour = NULL
+    ) +
+    theme_bw() +
+    theme(
+      # facet strips
+      strip.background = element_rect(fill = "white"),
+      strip.text       = element_text(face = "bold", size = 9),
+
+      # axes
+      axis.text        = element_text(colour = "black", size = 8),
+      axis.title       = element_text(size = 9),
+      axis.ticks       = element_line(linewidth = 0.3),
+
+      # panels
+      panel.grid       = element_blank(),
+      panel.border     = element_rect(colour = "grey50", linewidth = 0.4),
+
+      # legend
+      legend.position  = "bottom",
+      legend.text      = element_text(size = 8),
+      legend.key.width = unit(1.2, "lines"),
+
+      # title
+      plot.title       = element_text(size = 10, face = "bold")
+    )
+}
+
+
+
+```
+
+```{r}
+P_ecdf_biomass_2090s <- plot_ecdf_per_species(
+  pertrial_2090s_biomass,
+  title = "Biomass – ECDF of per-run % change (2024→2090s)"
+)
+
+P_ecdf_biomass_2090s
+```
+```{r}
+library(dplyr)
+library(tidyr)
+library(rlang)
+
+make_bestfit_pct_change <- function(bestfit_df,
+                                    species_set,
+                                    scenarios = c("SSP1-2.6","SSP2-4.5","SSP3-7.0"),
+                                    species_col = "species",
+                                    from_year = 2024,
+                                    to_years  = 2090:2099) {
+
+  sp_sym <- rlang::sym(species_col)
+
+  df <- bestfit_df %>%
+    filter(!!sp_sym %in% species_set,
+           scenario %in% scenarios,
+           year %in% c(from_year, to_years)) %>%
+    mutate(period = if_else(year == from_year, "from", "to"))
+
+  per_period <- df %>%
+    group_by(!!sp_sym, scenario, period) %>%
+    summarise(period_mean = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    pivot_wider(names_from = period, values_from = period_mean)
+
+  per_period %>%
+    mutate(pct_change_bestfit = 100 * (to - from) / from) %>%
+    transmute(
+      species = as.character(!!sp_sym),
+      scenario,
+      pct_change_bestfit
+    )
+}
+
+```
+
+```{r}
+library(purrr)
+
+make_bestfit_ecdf_points <- function(pertrial_df, bestfit_change_df) {
+
+  # join, then compute y = ECDF(x_bestfit) within each species×scenario
+  pertrial_df %>%
+    inner_join(bestfit_change_df, by = c("species", "scenario")) %>%
+    group_by(species, scenario) %>%
+    summarise(
+      x = unique(pct_change_bestfit),
+      y = mean(pct_change <= unique(pct_change_bestfit), na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+
+```
+
+```{r}
+library(ggplot2)
+
+plot_ecdf_with_bestfit <- function(pertrial_df,
+                                          bestfit_points_df,
+                                          title = NULL,
+                                          scenario_cols = c(
+                                            "SSP1-2.6" = "#56B4E9",
+                                            "SSP2-4.5" = "#E69F00",
+                                            "SSP3-7.0" = "#CC79A7"
+                                          )) {
+
+  df <- pertrial_df %>%
+    dplyr::filter(is.finite(pct_change)) %>%
+    dplyr::mutate(
+      species  = factor(species, levels = sort(unique(species))),
+      scenario = factor(scenario, levels = names(scenario_cols))
+    )
+
+  pts <- bestfit_points_df %>%
+    dplyr::mutate(
+      species  = factor(species, levels = levels(df$species)),
+      scenario = factor(scenario, levels = levels(df$scenario))
+    )
+
+  p <- ggplot(df, aes(x = pct_change, colour = scenario)) +
+    stat_ecdf(linewidth = 0.7) +  # match best-fit future linewidth ~0.7
+    facet_wrap(~ species, scales = "free_x") +
+    geom_vline(xintercept = 0, linewidth = 0.3, colour = "grey50") +
+    geom_point(
+      data = pts,
+      aes(x = x, y = y, colour = scenario),
+      inherit.aes = FALSE,
+      size  = 0.8,     # small, similar visual weight to your reference points
+      alpha = 0.9
+    ) +
+    scale_colour_manual(values = scenario_cols) +
+    labs(
+      x = "% change",
+      y = "probability",
+      title = title,
+      colour = NULL
+    ) +
+    theme_bw() +
+    theme(
+      strip.text = element_text(size = 8),
+      strip.background = element_rect(fill = "white", colour = "black"),
+      axis.text = element_text(size = 7),
+      axis.title = element_text(size = 9),
+      legend.position = "bottom"
+  )
+
+  p
+}
+
+```
+
+```{r}
+bestfit_2090s_biomass <- make_bestfit_pct_change(
+  bestfit_df   = bestfit_biomass,
+  species_set  = commercial_species,
+  scenarios    = scenarios,
+  species_col  = "species",   # change if needed
+  from_year    = 2024,
+  to_years     = 2090:2099
+)
+
+bestfit_pts_biomass <- make_bestfit_ecdf_points(
+  pertrial_df         = pertrial_2090s_biomass,
+  bestfit_change_df   = bestfit_2090s_biomass
+)
+
+pertrial_2090s_biomass_filt <- pertrial_2090s_biomass %>%
+  dplyr::filter(pct_change >= -100, pct_change <= 300)
+
+P_ecdf_biomass_2090s <- plot_ecdf_with_bestfit(
+  pertrial_df        = pertrial_2090s_biomass_filt,
+  bestfit_points_df  = bestfit_pts_biomass
+)
+
+P_ecdf_biomass_2090s
+
+# ggsave("ECDF_Biomass_commercial_90s.png",P_ecdf_biomass_2090s, width = 5.5, height = 5, dpi = 800)
+
+ggsave("ECDF_Biomass_commercial_90s_1.png",P_ecdf_biomass_2090s, width = 5.5, height = 5, dpi = 800)
+```
+Change plotting limits
+```{r}
+
+```
+
+
+
+```{r}
+perrun_2090s_biomass <- make_per_run_pct_change(
+  mc_df       = mc_biomass,
+  species_set = commercial_species,
+  scenarios   = scenarios,
+  run_col     = "trial",
+  from_period = list("2024"  = 2024),
+  to_period   = list("2090s" = 2090:2099)
+)
+```
+
